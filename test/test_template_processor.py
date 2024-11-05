@@ -251,20 +251,22 @@ ns1:prop a rdf:Property ;
 
 <https://data.agrimetrics.co.uk/datasets/testds/def/scheme1/label2> a skos:Concept ;
     skos:inScheme ns1:scheme1_scheme ;
-    skos:prefLabel "label2" .
-
-ns1:scheme1_scheme a skos:ConceptScheme ;
-    dcterms:description "Automatically generated concept scheme scheme1" ;
-    dcterms:title "scheme1" ;
-    skos:hasTopConcept <https://data.agrimetrics.co.uk/datasets/testds/def/scheme1/label1>,
-        <https://data.agrimetrics.co.uk/datasets/testds/def/scheme1/label2> .
+    skos:prefLabel "label2" ;
+    skos:topConceptOf ns1:scheme1_scheme .
 
 <https://data.agrimetrics.co.uk/datasets/testds/def/classes/registration> a owl:Class ;
     rdfs:label "registration" .
 
 <https://data.agrimetrics.co.uk/datasets/testds/def/scheme1/label1> a skos:Concept ;
     skos:inScheme ns1:scheme1_scheme ;
-    skos:prefLabel "label1" .
+    skos:prefLabel "label1" ;
+    skos:topConceptOf ns1:scheme1_scheme .
+
+ns1:scheme1_scheme a skos:ConceptScheme ;
+    dcterms:description "Automatically generated concept scheme scheme1" ;
+    dcterms:title "scheme1" ;
+    skos:hasTopConcept <https://data.agrimetrics.co.uk/datasets/testds/def/scheme1/label1>,
+        <https://data.agrimetrics.co.uk/datasets/testds/def/scheme1/label2> .
 
 """)
 
@@ -302,20 +304,22 @@ ns1:prop a rdf:Property ;
 
 <https://data.agrimetrics.co.uk/datasets/testds/def/scheme1/O2GA7EPQ6EREHPUGTKU7VEUD30R6LLDA> a skos:Concept ;
     skos:inScheme ns1:scheme1_scheme ;
-    skos:prefLabel "label2" .
-
-ns1:scheme1_scheme a skos:ConceptScheme ;
-    dcterms:description "Automatically generated concept scheme scheme1" ;
-    dcterms:title "scheme1" ;
-    skos:hasTopConcept <https://data.agrimetrics.co.uk/datasets/testds/def/scheme1/LQOLIG61J9UEV7BN9JOF36NUSRGICPDM>,
-        <https://data.agrimetrics.co.uk/datasets/testds/def/scheme1/O2GA7EPQ6EREHPUGTKU7VEUD30R6LLDA> .
+    skos:prefLabel "label2" ;
+    skos:topConceptOf ns1:scheme1_scheme .
 
 <https://data.agrimetrics.co.uk/datasets/testds/def/classes/registration> a owl:Class ;
     rdfs:label "registration" .
 
 <https://data.agrimetrics.co.uk/datasets/testds/def/scheme1/LQOLIG61J9UEV7BN9JOF36NUSRGICPDM> a skos:Concept ;
     skos:inScheme ns1:scheme1_scheme ;
-    skos:prefLabel "label1" .
+    skos:prefLabel "label1" ;
+    skos:topConceptOf ns1:scheme1_scheme .
+
+ns1:scheme1_scheme a skos:ConceptScheme ;
+    dcterms:description "Automatically generated concept scheme scheme1" ;
+    dcterms:title "scheme1" ;
+    skos:hasTopConcept <https://data.agrimetrics.co.uk/datasets/testds/def/scheme1/LQOLIG61J9UEV7BN9JOF36NUSRGICPDM>,
+        <https://data.agrimetrics.co.uk/datasets/testds/def/scheme1/O2GA7EPQ6EREHPUGTKU7VEUD30R6LLDA> .
 
 """)
             
