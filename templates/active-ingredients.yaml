@@ -1,0 +1,10 @@
+# Illustration of reusable properties for linking to active ingredients
+namespaces:
+  agvoc : https://data.agrimetrics.co.uk/def/
+  
+properties:
+  - name: activeIngredient
+    prop: "<agvoc:activeIngredient>"
+    reconciliationType: agvoc:PesticideActiveIngredient
+    #reconciliationFilters: 
+    #  "skos:inScheme" : "https://data.agrimetrics.co.uk/def/pesticide-active-ingredient/PesticideActiveIngredientq"

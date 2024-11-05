@@ -1,0 +1,30 @@
+# Demonsrate multiple resources
+globals:
+  $datasetID: hse
+
+namespaces:
+  agvoc : https://data.agrimetrics.co.uk/def/
+
+properties:
+  - name:  registrationNo
+    class: "<agvoc:Registration>"
+    prop:  "<agvoc:registrationNo>"
+    type:  "Int"
+    required: true
+
+resources:
+  - name: product
+    properties:
+      "@id" : "<hash('Product Name:','MAPP (Reg.) Number:')>"
+      "productName" : "{Product Name:}"
+      "formulation" : "{Formulation Type: |trim}"
+      "marketer"    : "{Marketing Company:}"
+      "usableBy"    : "{Amateur / Professional:}"
+    
+  - name: hse_registration
+    properties:
+      "@id" : "<hash(MAPP (Reg.) Number:)>"
+      ":registrationNo" : "{ MAPP (Reg.) Number:}"
+      "product"         : "<::product>"
+      "holder"          : "{Authorisation Holder: |trim}"
+      "use"             : "{Field of Use:}"

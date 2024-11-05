@@ -1,0 +1,30 @@
+# Import the HSE data "as is" - entity set style
+# Just lists the field names as given in the data with no mapping or interpretation
+# Basic class and property defs are declared on the fly
+# All values will be imported as single strings
+# Identifiers for data based just on filename and rows
+
+globals:
+  $datasetID: hse
+
+resources:  
+  - name: HSERegistration
+    properties:
+      "Product Name:": ""
+      "MAPP (Reg.) Number:":  ""
+      "Extent of Authorisation:": ""
+      "Authorisation Holder:": ""
+      "Marketing Company:": ""
+      "Active Substance(s):": ""
+      "Formulation Type:": ""
+      "Field of Use:": ""
+      "Crops:": ""
+      "Amateur / Professional:": ""
+      "LERAP Category:": ""
+      "Aquatic Use:": ""
+      "Authorisation Level:": ""
+      "First Authorisation Date:": ""
+      "Product Expiry Date (notes):": ""
+      "Low Risk Product:": ""
+      "Aerial Use:": ""
+

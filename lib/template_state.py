@@ -1,0 +1,97 @@
+from __future__ import annotations
+from rdflib import Graph, URIRef
+from lib.mapper_spec import MapperSpec
+from lib.reconcile import MatchResult
+
+class TemplateState:
+    """
+    Object to carry the state information through each stage of the template processing.
+
+    This is separated out here so we can use in both the processor and support module without import loops.
+    The state gives access to:
+    * the transform specification
+    * the binding context with both data from this row and global context
+    * backlinks giving the URIs for resources already generated for this row
+    * the RDF graph being generated, this graph might span the whole transform so far or some small blocker for just this row or a batch of rows
+    * a backlog of reconciliation requests to run in batches
+
+    The context will include the following variables:
+    * $baseURI     - base of URI for all data and definitions, there is a default but can be set in spec
+    * $datasetID   - short id string for this dataset, must be set in spec
+    * $file        - name of the file being ingested
+    * $row         - row number of the line being ingested
+    * $prop        - name of the current property being expanded
+    * $datasetBase - base URI for this dataset by default computed from baseURI and datasetID
+    * $resourceID  - short ID for the resource being generated, uses the name field in the template
+    * $parentID    - full URI for parent resource when processing embedded templates
+    * $listIndex   - index it list when process a list of results from a chained transform
+    * $reconciliationAPI - API endpoint for reconciliation, may be global or for a specific property
+    """
+
+    def __init__(self, context: dict, graph: Graph = Graph(), spec: MapperSpec = None, reconcile_stack: dict = {}) -> None:
+        self.spec = spec
+        self.context = context
+        self.graph = graph
+        self.backlinks = {}
+        self.reconcile_stack = reconcile_stack
+
+    def add_to_context(self, prop: str, value):
+        self.context[prop] = value
+
+    def get(self, prop: str):
+        return self.context.get(prop)
+
+    def child(self, subcontext: dict) -> TemplateState:
+        """Return a new template state which mirrors this but with additional temporary context bindings."""
+        child = TemplateState(self.context.new_child(subcontext), self.graph, self.spec, self.reconcile_stack)
+        child.backlinks = self.backlinks
+        return child
+
+    def record_reconcile_request(self, record: ReconciliationRecord):
+        """Record a reconciliation request, which might or might not have already been attempted and succeeded."""
+        self.reconcile_stack[record.lookup_key()] = record
+    
+    def reconciled_ref(self, key: str, keytype: str) -> URIRef:
+        """Return the URI for a reconciliation result or proxy if we have created one"""
+        record =  self.reconcile_stack.get(f"{key}-{keytype}")
+        return record.id if record else None
+    
+    def record_auto_cv(self, name: str, label: str, id: URIRef):
+        """Record an auto generated CV entry. 
+        
+           We reuse the backlinks dict since cv names and backlink names will be distinct.
+        """
+        self.backlinks[f"{name}/{label}"] = id
+    
+    def record_auto_emit(self, type: str, label: str) -> bool:
+        """Record an auto emitted property/class spec. Return true if already known.
+        
+           We reuse the backlinks dict since cv names and backlink names will be distinct.
+        """
+        key = f"{type}#{label}"
+        if key in self.backlinks:
+            return True
+        else:
+            self.backlinks[key] = True
+            return False
+
+    def get_auto_entry(self, name: str, label: str) -> URIRef:
+        """If there is an auto CV entry for this already return it."""
+        return self.backlinks.get(f"{name}/{label}")
+
+class ReconciliationRecord:
+    def __init__(self, key: str, keytype: str, id: URIRef = None) -> None:
+        self.id = id
+        self.key = key
+        self.keytype = keytype
+        self.result: MatchResult = None
+
+    def lookup_key(self): return f"{self.key}-{self.keytype}"
+
+    def id(self) -> URIRef:
+        if self.id:
+            return self.id
+        elif self.result and self.result.match:
+            return URIRef(self.result.match.id)
+        else:
+            return None

@@ -1,0 +1,7 @@
+#!/bin/bash
+TEMPLATE=$1
+rm -f mapper.log
+echo "Processing HSE sample ..."
+./mapper.py $TEMPLATE hse-sample.json hse-out.ttl
+echo "Publishing results"
+s-put http://localhost:3030/ds/data https://data.agrimetrics.co.uk/datasets/hse hse-out.ttl

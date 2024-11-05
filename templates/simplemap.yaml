@@ -1,0 +1,10 @@
+# Dummy template for mapper dev
+globals:
+  $datasetID: hse
+
+resources:
+  - name: hse_registration
+    properties:
+      "@id" : "<hash('Product Name:','MAPP (Reg.) Number:')>"
+      "productName" : "{Product Name:}"
+      "registrationNo" : "{ MAPP (Reg.) Number: | asInt}"

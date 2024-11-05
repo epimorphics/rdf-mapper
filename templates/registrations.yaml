@@ -1,0 +1,45 @@
+# Illustration of reusable properties describing a registration
+namespaces:
+  agvoc : https://data.agrimetrics.co.uk/def/
+  
+properties:
+  - name:  registrationNo
+    prop:  "<agvoc:registrationNo>"
+    required: true
+
+  - name:  authorisationDate
+    prop:  "<agvoc:authorisationDate>"
+    type:  "Date"
+
+  - name:  expiryDate
+    prop:  "<agvoc:expiryDate>"
+    type:  "Date"
+    
+  - name:  scope
+    prop:  "<agvoc:scope>"
+    
+  - name:  registrationAuthority
+    prop:  "<agvoc:registrationAuthority>"
+    range: "<org:Organization>"
+
+  - name:  registration
+    comment: Indicates a registration entry for some registered thing
+    prop:  "<agvoc:registration>"
+    range: "<agvoc:Registration>"
+
+class:
+  - name: Registration
+  - "@id": <agvoc:Registration>
+  - comment: "A registration of some entity formal registry authority. Registrations normal have a authorisation date, some identifying registration number and some scope of use. The entity registered is open for example it could be an activity, an organization or a product."
+  - properties:
+    - registrationNo
+    - authorisationDate
+    - expiryDate
+    - scope
+    - registrationAuthority
+
+ontology_source: |
+  # TBD
+
+constraints: |
+  # TODO - shacl or other expression of integrity constraints for registrations.

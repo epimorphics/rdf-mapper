@@ -1,0 +1,21 @@
+# Dummy template for mapper dev
+globals:
+  $datasetID: hse
+
+namespaces:
+  agvoc : https://data.agrimetrics.co.uk/def/
+
+properties:
+  - name:  registrationNo
+    class: "<agvoc:Registration>"
+    prop:  "<agvoc:registrationNo>"
+    type:  "Int"
+    required: true
+
+resources:
+    
+  - name: hse_registration
+    properties:
+      "@id" : "<hash('Product Name:','MAPP (Reg.) Number:')>"
+      "productName" : "{Product Name:}"
+      ":registrationNo" : "{ MAPP (Reg.) Number:}"

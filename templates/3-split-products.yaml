@@ -1,0 +1,49 @@
+# Separate the product being registered from the registration itself
+# Could imagine a simple reusable vocabulary for products but here just define inline
+
+globals:
+  $datasetID: hse
+
+imports:
+  - registrations.yaml
+
+one_offs:
+  - name: HSE
+    properties:
+      "@type" : <org:Organization>
+      "<skos:prefLabel>" : "Health and Safety Executive@en"
+      "<rdfs:comment>"  : "The Health and Safety Executive (HSE) is Britain’s national regulator for workplace health and safety.@en"
+
+resources:
+  - name: AgriProduct
+    comment: "A agri-tech product. This class should be made reusable."
+    properties:
+      "@id" : "<hash('Product Name:','MAPP (Reg.) Number:')>"
+      "<rdfs:label>": "{Product Name:}"
+      "productName" : "{Product Name:}"
+      "formulation" : "{Formulation Type:}"
+      "marketer"    : "{Marketing Company:}"
+      "usableBy"    : "{Amateur / Professional:}"
+      "activeIngredient"  : "{Active Substance(s):}"
+
+  - name: HSERegistration
+    subclassOf: "<agvoc:Registration>"
+    properties:
+      "@id"                    : "<hash(MAPP (Reg.) Number:,Extent of Authorisation:)>"
+      "<rdfs:label>"           : "Registration { MAPP (Reg.) Number:} for {Product Name:}"
+      ":registrationNo"        : "{ MAPP (Reg.) Number:}"
+      ":authorisationDate"     : "{First Authorisation Date:}"
+      ":expiryDate"            : "{Product Expiry Date (notes):}"
+      ":scope"                 : "{Extent of Authorisation:}"
+      ":registrationAuthority" : "<::HSE>"
+      "product"                : "<::AgriProduct>"
+      "^:registration"         : "<::AgriProduct>"
+
+      "Authorisation Holder:": ""
+      "Field of Use:": ""
+      "Crops:": ""
+      "LERAP Category:": ""
+      "Aquatic Use:": ""
+      "Authorisation Level:": ""
+      "Low Risk Product:": ""
+      "Aerial Use:": ""

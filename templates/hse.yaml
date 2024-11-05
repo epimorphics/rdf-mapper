@@ -1,0 +1,76 @@
+# Simplified HSE template
+globals:
+  $datasetID: hse
+  $reconciliationAPI: http://localhost:8888/rd/api/reconcile
+
+imports:
+  - registrations.yaml
+  - crop-parser.py
+  - ingredient-parser.py
+  - active-ingredients.yaml
+
+one_offs:
+  - name: HSE
+    properties:
+      "@type" : <org:Organization>
+      "<skos:prefLabel>" : "Health and Safety Executive@en"
+      "<rdfs:comment>"  : "The Health and Safety Executive (HSE) is Britain’s national regulator for workplace health and safety.@en"
+
+  - name: HSEDataset
+    properties:
+      "<rdfs:label>"   : HSE dataset
+      "<rdfs:comment>" : "Demo import of HSE dataset."
+      "<dct:created>"  : "{|now}"
+
+properties:
+  - name: crop
+    prop: "<agvoc:crop>"
+    reconciliationFilters: 
+      "skos:inScheme" : "https://data.agrimetrics.co.uk/crop-definition/CropDefinitionScheme"
+
+  - name: qualifier
+    prop: "qualifier"
+    reconciliationFilters:
+      "skos:inScheme" : "https://data.agrimetrics.co.uk/id/crop-definition-qualifier/CropDefinitionQualifierScheme"
+
+resources:
+  - name: AgriProduct
+    comment: "A agri-tech product. This class should be made reusable."
+    properties:
+      "@id" : "<hash('Product Name:','MAPP (Reg.) Number:')>"
+      "productName" : "{Product Name:}"
+      "formulation" : "{Formulation Type: | autoCV}"
+      "marketer"    : "{Marketing Company:}"
+      "usableBy"    : "{Amateur / Professional: | autoCV}"
+      "active-ingredient"  : "{Active Substance(s): | ingredient_parse | map_to('ingredient')}"
+    
+  - name: HSERegistration
+    comment: "Registration of a crop control or plant protection product by HSE"
+    subclassOf: "<agvoc:Registration>"
+    properties:
+      "@id" : "<hash(MAPP (Reg.) Number:)>"
+      ":registrationNo" : "{ MAPP (Reg.) Number:}"
+      "product"         : "<::product>"
+      "holder"          : "{Authorisation Holder:}"
+      "use"             : "{Field of Use:}"
+      ":authorisationDate" : "{First Authorisation Date:}"
+      ":expiryDate"     : "{Product Expiry Date (notes):}"
+      ":scope"          : "{Extent of Authorisation: | autoCV}"
+      "aquaticUse"      : "{Aquatic Use: | asBoolean}"
+      "aerialUse"       : "{Aerial Use: | asBoolean}"
+      "lowRiskProduct"  : "{Low Risk Product: | asBoolean}"
+      "crop-situation"  : "{Crops: | crop_parse | map_to('crop-situation')}"
+      "<skos:member>"   : "<::HSEDataset>"
+      ":registrationAuthority" : "<::HSE>"
+
+embedded:
+  - name: crop-situation
+    properties:
+      ":crop"      : "{crop}"
+      ":qualifier" : "{qualifiers}"
+
+  - name: ingredient
+    properties:
+      ":activeIngredient" : "{substance}"
+      "concentration" : "{concentration}"
+      "unit" : "{unit}"

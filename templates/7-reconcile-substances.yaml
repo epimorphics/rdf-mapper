@@ -1,0 +1,79 @@
+# Micro parse the ingredients
+# Reconcile the substances - this time assume we have a definition of the property to use
+# Does not handle units at this stage
+
+globals:
+  $datasetID: hse
+  $reconciliationAPI: http://localhost:8888/api/reconcile
+
+imports:
+  - registrations.yaml
+  - crop-parser.py
+  - ingredient-parser.py
+  - active-ingredients.yaml
+
+one_offs:
+  - name: HSE
+    properties:
+      "@type" : <org:Organization>
+      "<skos:prefLabel>" : "Health and Safety Executive@en"
+      "<rdfs:comment>"  : "The Health and Safety Executive (HSE) is Britain’s national regulator for workplace health and safety.@en"
+
+properties:
+  - name: crop
+    prop: "<agvoc:crop>"
+    reconciliationFilters: 
+      "skos:inScheme" : "https://data.agrimetrics.co.uk/crop-definition/CropDefinitionScheme"
+
+  - name: qualifier
+    prop: "qualifier"
+    reconciliationFilters:
+      "skos:inScheme" : "https://data.agrimetrics.co.uk/id/crop-definition-qualifier/CropDefinitionQualifierScheme"
+
+resources:
+  - name: AgriProduct
+    comment: "A agri-tech product. This class should be made reusable."
+    properties:
+      "@id" : "<hash('Product Name:','MAPP (Reg.) Number:')>"
+      "<rdfs:label>": "{Product Name:}"
+      "productName" : "{Product Name:}"
+      "formulation" : "{Formulation Type: | autoCV}"
+      "marketer"    : "{Marketing Company:}"
+      "usableBy"    : "{Amateur / Professional: | autoCV}"
+      "activeIngredient"  : "{Active Substance(s): | ingredient_parse | map_to('Ingredient')}"
+
+  - name: HSERegistration
+    subclassOf: "<agvoc:Registration>"
+    properties:
+      "@id"                    : "<hash(MAPP (Reg.) Number:,Extent of Authorisation:)>"
+      "<rdfs:label>"           : "Registration { MAPP (Reg.) Number:} for {Product Name:}"
+      ":registrationNo"        : "{ MAPP (Reg.) Number:}"
+      ":authorisationDate"     : "{First Authorisation Date:}"
+      ":expiryDate"            : "{Product Expiry Date (notes):}"
+      ":scope"                 : "{Extent of Authorisation: | autoCV}"
+      ":registrationAuthority" : "<::HSE>"
+      "product"                : "<::AgriProduct>"
+      "^:registration"         : "<::AgriProduct>"
+      "aquaticUse"             : "{Aquatic Use: | asBoolean}"
+      "aerialUse"              : "{Aerial Use: | asBoolean}"
+      "lowRiskProduct"         : "{Low Risk Product: | asBoolean}"
+      "holder"                 : "{Authorisation Holder:}"
+      "authorisationLevel"     : "{Authorisation Level: | autoCV}"
+      "use"                    : "{Field of Use: | autoCV}"
+      "crop-situation"         : "{Crops: | crop_parse | map_to('CropSituation')}"
+      
+      "LERAP Category:": ""
+
+embedded:
+  - name: CropSituation
+    properties:
+      "@id"        : "<parent>"
+      ":crop"      : "{crop}"
+      ":qualifier" : "{qualifiers}"
+
+  - name: Ingredient
+    properties:
+      "@id"               : "<parent>"
+      ":activeIngredient" : "{substance}"
+      "concentration"     : "{concentration}"
+      "unit"              : "{unit}"
