@@ -374,7 +374,7 @@ def asDateOrDatetime(s: str, state: TemplateState = None) -> Literal:
 
 def asBoolean(s: str, state: TemplateState = None, *args) -> Literal:
     if len(args):
-        return Literal(s in args, datatype=XSD.boolean)
+        return Literal(s.lower() in [a.lower() for a in args], datatype=XSD.boolean)
     return Literal(s.lower() in ["yes", "true", "ok", "1"], datatype=XSD.boolean)
 
 def trim(s: str, state: TemplateState = None) -> str:
