@@ -234,6 +234,11 @@ def process_property_value(resource: URIRef, prop: str, template, state: Templat
     """Process a single property expansion."""
     if prop == "@id" or prop == "@type":
         return   # already processed
+    if isinstance(template, list):
+        # Multiple expansions defined for this property
+        for template_item in template:
+            process_property_value(resource, prop, template_item, state)
+        return
     inverse = prop.startswith("^")
     if inverse:
         prop = prop[1:]

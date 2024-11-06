@@ -322,7 +322,40 @@ ns1:scheme1_scheme a skos:ConceptScheme ;
         <https://data.agrimetrics.co.uk/datasets/testds/def/scheme1/O2GA7EPQ6EREHPUGTKU7VEUD30R6LLDA> .
 
 """)
-            
+
+    def test_property_value_list(self):
+        self.do_test(
+            MapperSpec({
+                "globals": {"$datasetID": "testds"},
+                "resources": [{
+                    "name": "registration",
+                    "properties": {
+                        "@id":"<http://example.com/{id}>",
+                        "prop": [
+                            "<http://example.com/value/{x}>",
+                            "{y}"
+                        ]
+                    }
+                }]
+            }),
+            [self.row1],
+            """@prefix ns1: <https://data.agrimetrics.co.uk/datasets/testds/def/> .
+@prefix owl: <http://www.w3.org/2002/07/owl#> .
+@prefix rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#> .
+@prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#> .
+
+<http://example.com/123> a <https://data.agrimetrics.co.uk/datasets/testds/def/classes/registration> ;
+    ns1:prop <http://example.com/value/foo>,
+        "bar" .
+
+ns1:prop a rdf:Property ;
+    rdfs:label "prop" .
+
+<https://data.agrimetrics.co.uk/datasets/testds/def/classes/registration> a owl:Class ;
+    rdfs:label "registration" .
+
+"""
+        )
     def do_test(self, spec: MapperSpec, rows: list, expected: str):
         self.maxDiff = 5000
         output = StringIO("")
