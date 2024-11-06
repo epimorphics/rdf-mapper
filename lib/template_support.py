@@ -10,7 +10,7 @@
 
 import sys
 import re
-from rdflib import Literal, XSD, URIRef, term, RDF, SKOS
+from rdflib import Literal, XSD, URIRef, term, RDF, SKOS, BNode
 import uuid
 import hashlib
 import base64
@@ -208,10 +208,13 @@ def process_resource_spec(name: str, rs: ResourceSpec, state: TemplateState) -> 
 
     # If we have no URI assignment default to the row pattern
     id_template = rs.find_prop_defn("@id") or "<row>"
-    id =uri_expand(id_template, namespaces, state)
-    resource = URIRef(id)
+    if id_template == "<_>":
+        resource = BNode()
+    else:
+        id =uri_expand(id_template, namespaces, state)
+        resource = URIRef(id)
     state.backlinks[name] = resource
-    state.add_to_context("$parentID", id)
+    state.add_to_context("$parentID", str(resource))
 
     # Use an assigned type or default
     type_template = rs.find_prop_defn("@type") 
@@ -267,6 +270,9 @@ def process_property_value(resource: URIRef, prop: str, template, state: Templat
             # Skip lines with no value to lookup, 
             logging.warn(f"Skipping property due to {err}")
             value = None
+    elif isinstance(template, dict):
+        rs = ResourceSpec(template)
+        value = process_resource_spec(rs.name, rs, state)
     else:
         raise NotImplementedError("Implement inline property specs")
     if isinstance(value, list):

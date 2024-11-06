@@ -92,6 +92,7 @@ URI templates (which generate URI values) are mostly indicated by surrounding `<
 | `<parent>` | Generate a URI relative to the parent URI when processing an embedded template, the relative URI will use the resourceID and any list index if the embedded template is processing a list of values |
 | `<::name>` | Back reference to the URI of a previously generated resource with the given name |
 | `name` | Generate a URI in the dataset data namespace with localname `name`, this version, without `<...>` is only applicable in cases where the template is known to be a URI (`@id` or `@type`) |
+| `<_>` | Generate a blank node rather than a URI node. |
 
 Base URIs for the data set default to `<{$datasetBase}/data/>` for data elements and `<{$datasetBase}/def/>` for ontology elements.  Where `$datasetBase` defaults to `{$baseURI}{$datasetId}`.
 
@@ -134,7 +135,9 @@ Variables available for use in patterns include the fields (columns) each data r
 
 ### Property references
 
-The properties defined for a resource are a map from a property specification to a value template where the value template can be either a URI pattern or a literal pattern as above.
+The properties defined for a resource are a map from a property specification to a value template or a list of value templates where the value template can be either a URI pattern or a literal pattern as above.
+
+A property specification may also be mapped to a resource specification. In this case, the inner resource specification is processed and the URI of the resulting resource is used as the property value.
 
 The property specification can be:
 
