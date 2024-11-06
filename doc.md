@@ -137,6 +137,8 @@ Variables available for use in patterns include the fields (columns) each data r
 
 The properties defined for a resource are a map from a property specification to a value template or a list of value templates where the value template can be either a URI pattern or a literal pattern as above.
 
+A property specification may also be mapped to a resource specification. In this case, the inner resource specification is processed and the URI of the resulting resource is used as the property value.
+
 The property specification can be:
 
 | Property spec | Description |
