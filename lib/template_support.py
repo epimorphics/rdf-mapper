@@ -349,7 +349,8 @@ def asInt3(s: str, state: TemplateState = None):
     return int(s)*3
 
 def asInt(s: str, state: TemplateState = None) -> Literal:
-    return Literal(s, datatype=XSD.integer) if s else None
+    return Literal(int(float(s))) if s else None
+    # return Literal(s, datatype=XSD.integer) if s else None
 
 def asDecimal(s: str, state: TemplateState = None) -> Literal:
     return Literal(s, datatype=XSD.decimal) if s else None
@@ -487,6 +488,8 @@ _AUTO_CONCEPT_SCHEME_SPEC = ResourceSpec({
 
 def autoCV(label: str, state: TemplateState, cv_name: str = None, cv_type: str = None) -> URIRef:
     """Generate a skos concept, and associated scheme, for the given level or reuse one we did earlier."""
+    if not  label or len(label) == 0:
+        return None
     id = state.get_auto_entry(cv_name, label)
     if not id:
         if not cv_name:
