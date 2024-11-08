@@ -206,6 +206,19 @@ def process_resource_spec(name: str, rs: ResourceSpec, state: TemplateState) -> 
     properties = rs.properties
     namespaces = state.spec.namespaces
 
+    # If the resource spec has a requires dict, check the row for matching values
+    if rs.requires:
+        for key in rs.requires:
+            value = state.get(key)
+            expected = rs.requires.get(key)
+            if expected is not None:
+                if value != expected:
+                    logging.warning(
+                        f"Skipping resource {rs.name} on row {state.get('$row')} because value for {key} is {value}, which is different from the required value {expected}.")
+                    return None
+            elif len(value) == 0:
+                logging.warning(f"Skipping resource {rs.name} on row {state.get('$row')} because value for {key} is empty.")
+                return None
     # If we have no URI assignment default to the row pattern
     id_template = rs.find_prop_defn("@id") or "<row>"
     if id_template == "<_>":

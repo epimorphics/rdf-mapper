@@ -70,6 +70,7 @@ Resource definitions can have the following fields:
 |---|---|
 | `name` | Short name for the resource. For locally typed resources will be used the local name of the class URI and its `rdfs:label`. Also used for back references within templates. Required. |
 | `comment` | Descriptive comment, will be used as `rdfs:comment` on any auto generated class definition. |
+| `requires` | An optional dictionary mapping column names to the value required to be in that column for the resource mapping to be applied. If no value is provided, then the column is required to have any non-empty value.
 | `properties` | List of property/value templates defining the properties to attach to the generated resource |
 
 Entries in `one_offs` are identical to `resources` definitions, the difference is in their application, one offs are only generated once for the run and are a way to create static resources that the rows can refer to. 

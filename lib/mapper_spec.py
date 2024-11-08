@@ -166,6 +166,9 @@ class ResourceSpec:
             self.spec = spec
             self.name = spec.get("name")
             self.properties = _listify(spec.get("properties"))
+            self.requires = spec.get("requires")
+            if self.requires is not None and not isinstance(self.requires, dict):
+                _error(f"Resource spec requires must be a dictionary, was {self.requires}")
         else:
             _error(f"Resource spec must be a map with at least name and some properties, was {spec}")
 
