@@ -179,7 +179,7 @@ def value_expand(pattern: str, namespaces: dict, state: TemplateState) -> term.I
        Transform functions may be builtin or registered via register_fn.
        Builtins include: asInt asDecimal asDate 
     """
-    if pattern.startswith("<") and pattern.endswith(">"):
+    if pattern.startswith("<") and pattern.endswith(">") and not _DT_PATTERN.fullmatch(pattern):
         if pattern.startswith("<::"):
             return state.backlinks.get(pattern[3:-1])
         else:
