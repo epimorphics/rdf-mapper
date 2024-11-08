@@ -10,6 +10,8 @@
 
 import sys
 import re
+from typing import Union
+
 from rdflib import Literal, XSD, URIRef, term, RDF, SKOS, BNode
 import uuid
 import hashlib
@@ -22,7 +24,7 @@ from lib.mapper_spec import ResourceSpec, PropSpec
 from lib.reconcile import requestReconcile, MatchResult, ReconcileRequest
 import logging
 
-_VARPATTERN = re.compile("""{([^}]*)}""")
+_VARPATTERN = re.compile(r"{([^}]*)}")
 
 def pattern_expand(template: str, state: TemplateState) -> str:
     """Return template with var references {var} expanded from the given dict-like context.
@@ -50,7 +52,7 @@ def pattern_expand(template: str, state: TemplateState) -> str:
         fragments.append(template[last_match:])
         return ''.join(fragments)
 
-_PIPEPATTERN = re.compile("\s*\|\s*")
+_PIPEPATTERN = re.compile(r"\s*\|\s*")
 
 def valueof_var(var: str, state: TemplateState):
     """Return the value of the var from the context.
@@ -75,7 +77,7 @@ def valueof_var(var: str, state: TemplateState):
             raise ValueError(f"Could not find function {fnname}")
     return val
 
-_POOR_URI_CHARS = re.compile("[^\w\-]+")
+_POOR_URI_CHARS = re.compile(r"[^\w\-]+")
 
 def normalize(s: str) -> str:
     norm = _POOR_URI_CHARS.sub("_",s.strip())
@@ -83,10 +85,10 @@ def normalize(s: str) -> str:
     if norm.startswith("_"): norm = norm[1:]
     return norm
 
-_CURI_PATTERN = re.compile("([_A-Za-z][\w\-\.]*):([\w\-\.]+)")
-_URI_PATTERN = re.compile("(https?|file|urn)://.*")   # TODO Support other schemes
-_HASH_PATTERN = re.compile("hash\s?\((.*)\)$")
-_COMMA_SPLIT = re.compile("\s*,\s*")
+_CURI_PATTERN = re.compile(r"([_A-Za-z][\w\-\.]*):([\w\-\.]+)")
+_URI_PATTERN = re.compile(r"(https?|file|urn)://.*")   # TODO Support other schemes
+_HASH_PATTERN = re.compile(r"hash\s?\((.*)\)$")
+_COMMA_SPLIT = re.compile(r"\s*,\s*")
 
 def uri_expand(pattern: str, namespaces: dict, state: TemplateState) -> str:
     """Expand a URI pattern.
@@ -160,7 +162,9 @@ def _expand_curi(uriref: str, namespaces: dict,) -> str:
             return ns + match.group(2)
     return uriref
 
-_LANGSTRING_PATTERN = re.compile("^(.+)@([\w\-]+)$")
+
+_LANGSTRING_PATTERN = re.compile(r"^(.+)@([\w\-]+)$")
+_DT_PATTERN = re.compile(r"^(.+)\^\^(<[^>]+>)$")
 
 def value_expand(pattern: str, namespaces: dict, state: TemplateState) -> term.Identifier:
     """Expand a value template to an RDF value.
@@ -182,19 +186,23 @@ def value_expand(pattern: str, namespaces: dict, state: TemplateState) -> term.I
             return URIRef(uri_expand(pattern, namespaces, state))
     else:
         val = pattern_expand(pattern, state)
-        return _value_to_rdf(val)
+        return _value_to_rdf(val, state)
         
-def _value_to_rdf(val) -> term.Identifier:
+def _value_to_rdf(val, state:TemplateState) -> Union[None, term.Identifier, list]:
     if isinstance(val, term.Identifier):
         return val
-    elif val == None:
+    elif val is None:
         return None
     elif isinstance(val, list):
-        return [_value_to_rdf(v) for v in val]
+        return [_value_to_rdf(v, state) for v in val]
     elif isinstance(val, str):
         if _LANGSTRING_PATTERN.fullmatch(val):
             match = _LANGSTRING_PATTERN.fullmatch(val)
             return Literal(match.group(1), lang=match.group(2))
+        elif _DT_PATTERN.fullmatch(val):
+            match = _DT_PATTERN.fullmatch(val)
+            dt_uri = uri_expand(match.group(2), state.spec.namespaces, state)
+            return Literal(match.group(1), datatype=dt_uri)
         else:
             return Literal(val)
     else:
@@ -338,7 +346,7 @@ def register_fn(name: str, fn):
     """Add a named function to the register of operation that can be used in var processing chains."""
     _FUN_REGISTRY[name] = fn
 
-_CALL_PATTERN = re.compile("([\w]+)\s*\((.*)\)")
+_CALL_PATTERN = re.compile(r"([\w]+)\s*\((.*)\)")
 
 def find_fn(call: str):
     """
