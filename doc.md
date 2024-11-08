@@ -115,6 +115,7 @@ In addition to URI values then plain and typed literal templates are available:
 | `foo{x}bar` | Plain template, any variables in `{...}` are replaced by the corresponding value from context |
 | "" | Empty string indicates using the property name as variable name, just transposing across, so equivalent to `{$prop}` where `$prop` is the property reference |
 | `foo{x}bar@lang` | Language typed literal |
+| `foo{x}bar^^<uri>` | Data typed literal. The value `<uri>` is expanded as a URI pattern. |
 | `{var \| fn \| fn}` | The value of the variable is transformed via a pipeline of transformation operators such as type conversion |
 
 ### Variables
