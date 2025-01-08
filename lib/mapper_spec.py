@@ -21,7 +21,7 @@ class MapperSpec:
         "skosxl": "http://www.w3.org/2008/05/skos-xl#",
         "dct": "http://purl.org/dc/terms/",
         "foaf": "http://xmlns.com/foaf/0.1/",
-        "geo": "httwherep://www.w3.org/2001/XMLSchema#",
+        "geo": "http://www.w3.org/2003/01/geo/wgs84_pos#",
         "qb": "http://purl.org/linked-data/cube#",
         "vcard": "http://www.w3.org/2006/vcard/ns#",
         "org": "http://www.w3.org/ns/org#"
