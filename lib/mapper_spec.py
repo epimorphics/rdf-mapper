@@ -10,7 +10,7 @@ import importlib.util
     
 class MapperSpec:
     builtins = {
-        "$baseURI" : "https://data.agrimetrics.co.uk/datasets/"
+        "$baseURI" : "https://epimorphics.com/datasets/"
     }
 
     builtinNamespaces = {
