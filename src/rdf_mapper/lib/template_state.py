@@ -1,7 +1,7 @@
 from __future__ import annotations
 from rdflib import Graph, URIRef
-from lib.mapper_spec import MapperSpec
-from lib.reconcile import MatchResult
+from rdf_mapper.lib.mapper_spec import MapperSpec
+from rdf_mapper.lib.reconcile import MatchResult
 
 class TemplateState:
     """

@@ -7,8 +7,8 @@ import os
 import sys
 from typing import TextIO
 
-from lib.mapper_spec import load_template
-from lib.template_processor import TemplateProcessor
+from rdf_mapper.lib.mapper_spec import load_template
+from rdf_mapper.lib.template_processor import TemplateProcessor
 
 
 def process_jsonlines(file:TextIO, processor:TemplateProcessor) -> None:

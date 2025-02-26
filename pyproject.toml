@@ -17,7 +17,6 @@ dependencies = [
 ]
 name = "rdf_mapper"
 version = "0.1.0"
-# dynamic = ["version"]
 description = "Simple CSV/JSON to RDF mapper"
 authors = [
     { name = "Dave Reynolds", email = "dave.reynolds@epimorphics.com" },
@@ -35,7 +34,7 @@ where = ["src"]
 include = []
 
 [project.scripts]
-mapper = "rdf_mapper:mapper"
+mapper = "rdf_mapper.mapper:main"
 
 [tool.pytest.ini_options]
 addopts = ""

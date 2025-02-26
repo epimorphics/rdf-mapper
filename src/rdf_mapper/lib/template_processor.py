@@ -2,11 +2,11 @@
     Processor to generate RDF transformed output from each row of source data based on mapper spec.
 """
 
-from lib.mapper_spec import MapperSpec
+from rdf_mapper.lib.mapper_spec import MapperSpec
 from rdflib import Graph
 from typing import TextIO
-from lib.template_support import process_resource_spec
-from lib.template_state import TemplateState
+from rdf_mapper.lib.template_support import process_resource_spec
+from rdf_mapper.lib.template_state import TemplateState
 import logging
 
 class TemplateProcessor:

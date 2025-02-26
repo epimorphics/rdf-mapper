@@ -19,9 +19,9 @@ import base64
 from urllib.parse import urljoin
 import dateparser
 import datetime
-from lib.template_state import TemplateState, ReconciliationRecord
-from lib.mapper_spec import ResourceSpec, PropSpec
-from lib.reconcile import requestReconcile, MatchResult, ReconcileRequest
+from rdf_mapper.lib.template_state import TemplateState, ReconciliationRecord
+from rdf_mapper.lib.mapper_spec import ResourceSpec, PropSpec
+from rdf_mapper.lib.reconcile import requestReconcile, MatchResult, ReconcileRequest
 import logging
 
 _VARPATTERN = re.compile(r"{([^}]*)}")

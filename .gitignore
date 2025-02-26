@@ -5,3 +5,6 @@ mapper.log
 hse-full.ttl
 hse-out.ttl
 *.egg-info
+.ruff_cache
+dist
+build
