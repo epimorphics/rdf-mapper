@@ -1,0 +1,79 @@
+[build-system]
+requires = ["setuptools >= 61.0", "autosemver"]
+
+[project]
+requires-python = ">=3.12"
+dependencies = [
+    "autosemver",
+    "setuptools",
+    "pyright[nodejs]",
+    "pydantic-settings",
+    "dateparser",
+    "isodate",
+    "lark",
+    "PyYAML",
+    "rdflib",
+    "urllib3"
+]
+name = "rdf_mapper"
+version = "0.1.0"
+# dynamic = ["version"]
+description = "Simple CSV/JSON to RDF mapper"
+authors = [
+    { name = "Dave Reynolds", email = "dave.reynolds@epimorphics.com" },
+    { name = "Kal Ahmed", email = "kal.ahmed@epimorphics.com" },
+]
+
+[project.optional-dependencies]
+test = ["pytest"]
+docs = ["sphinx", "sphinx-rtd-theme"]
+lint = ["ruff"]
+dev = ["rdf_mapper[test,docs,lint]"]
+
+[tool.setuptools.packages.find]
+where = ["src"]
+include = []
+
+[project.scripts]
+mapper = "rdf_mapper:mapper"
+
+[tool.pytest.ini_options]
+addopts = ""
+markers = ["slow: Marks slow tests"]
+
+filterwarnings = [
+    "ignore::DeprecationWarning:autosemver.*:",
+    "ignore::DeprecationWarning:pkg_resources.*:",
+]
+
+[tool.ruff]
+src = ["src", "tests"]
+include = ["src/**.py"]
+line-length = 120
+
+[tool.ruff.lint]
+select = [
+    "F",
+    "E",
+    "W",
+    "A",
+    "PLC",
+    "PLE",
+    "PLW",
+    "I",
+    "N816",
+    "ANN001",
+    "ANN201",
+    "ANN202",
+    "ANN205",
+    "ANN206",
+]
+
+[tool.ruff.lint.flake8-type-checking]
+strict = true
+
+[tool.pyright]
+executionEnvironments = [{ root = "src" }]
+typeCheckingMode = "standard"
+venvPath = "."
+venv = "venv"

@@ -1,28 +1,47 @@
-# Proof of Concept mapping tool
+# Simple RDF mapping tool
 
 ## key features
 
 * declarative mapping spec (in yaml) for easy replay
-* could imagine UI tool that incrementally generates the yaml
 * built in default patterns (URIs etc) to simplify mapping process
 * built in pipeline operators for higher level transformations
-* reconciliation, auto-CV creation, intelligent date parse
+* reconciliation and auto-CV creation for handling reference data
 * can import vocabulary modules so mapping can refer to those terms
-* mapping between OWL and yaml representations TBD
 * can import processing modules for custom parsing or transformations
-* mapping specification should be enough to generate basic API configuration TBD
+
+## Set up
+
+Create virtual env and install dependencies:
+
+    python3 -m venv venv
+    . venv/bin/activate
+    pip install .
+       
+## Dev set up
+
+    pip install rdf_mapper[dev]
+    pip install -e .
+
+Linting:
+
+    ruff check [--fix]
+
+VScode ruff plugin for interactive linting and type checking.
+
+Check for package updates:
+
+    pip install pip-tools
+    pip-compile --upgrade pyproject.toml
 
 ## usage
 
-    ./mapper.py template input [output]
+    rdf_mapper template input [output]
 
 Generates a `mapper.log` with record of actions and errors, errors also flagged to stderr.
 
-See ./templates for example mapping templates.
-
-Templates 6 and 7 require reconciliation service running.
+See ./examples/hse/templates for example mapping templates (note that templates 6 and 7 there require a reconciliation service running).
 
 ## Documentation
 
-See [docs](./doc.md)
+See [docs](./doc/doc.md)
 
