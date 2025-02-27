@@ -92,6 +92,7 @@ class TestTemplateSupport(unittest.TestCase):
         self.assertEqual(asDateTime("18 May 2023 12:34"), Literal("2023-05-18T12:34:00", datatype=XSD.dateTime))
         self.assertEqual(asDateOrDatetime("18 May 2023 12:34"), Literal("2023-05-18T12:34:00", datatype=XSD.dateTime))
         self.assertEqual(asDateOrDatetime("18 May 2023"), Literal("2023-05-18", datatype=XSD.date))
+        self.assertEqual(asDateOrDatetime("2023"), Literal("2023-01-01", datatype=XSD.date))
 
     def test_boolean(self) -> None:
         self.assertEqual(asBoolean("true"), Literal(True, datatype=XSD.boolean))

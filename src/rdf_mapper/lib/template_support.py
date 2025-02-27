@@ -387,14 +387,17 @@ def asDate(s: str, state: TemplateState = None) -> Literal:
     return Literal(dt.date().isoformat(), datatype=XSD.date) if dt else None
 
 def asDateOrDatetime(s: str, state: TemplateState = None) -> Literal:
-    dt = dateparser.parse(s)
-    if dt:
-        if dt.time() == datetime.time(0,0):
-            return Literal(dt.date().isoformat(), datatype=XSD.date)
-        else:
-            return Literal(dt.isoformat(), datatype=XSD.dateTime)
+    if re.fullmatch(r"[12]\d{3}", s):
+        return Literal(f'{s}-01-01', datatype=XSD.date)
     else:
-        return None
+        dt = dateparser.parse(s)
+        if dt:
+            if dt.time() == datetime.time(0,0):
+                return Literal(dt.date().isoformat(), datatype=XSD.date)
+            else:
+                return Literal(dt.isoformat(), datatype=XSD.dateTime)
+        else:
+            return None
 
 def asBoolean(s: str, state: TemplateState = None, *args) -> Literal:
     if len(args):
