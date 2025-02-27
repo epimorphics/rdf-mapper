@@ -10,7 +10,7 @@ dependencies = [
     "pyright[nodejs]",
     "pydantic-settings",
     "dateparser == 1.2.1",
-    "isodate = 0.7.2",
+    "isodate == 0.7.2",
     "lark == 1.2.2",
     "PyYAML == 6.0.2",
     "rdflib == 7.1.3",
