@@ -1,22 +1,24 @@
 #!/bin/env python3
 import argparse
-import sys
-import json
-import os
-from lib.template_processor import TemplateProcessor
-from lib.mapper_spec import load_template
-from typing import TextIO
-import logging
 import csv
+import json
+import logging
+import os
+import sys
+from typing import TextIO
 
-def process_jsonlines(file:TextIO, processor:TemplateProcessor):
+from rdf_mapper.lib.mapper_spec import load_template
+from rdf_mapper.lib.template_processor import TemplateProcessor
+
+
+def process_jsonlines(file:TextIO, processor:TemplateProcessor) -> None:
     with(file):
         for line in file:
             data = json.loads(line)
             processor.process_row(data)
     processor.finalize()
 
-def process_csv(file:TextIO, processor:TemplateProcessor):
+def process_csv(file:TextIO, processor:TemplateProcessor)  -> None:
     with(file):
         reader = csv.DictReader(file)
         for row in reader:
@@ -30,7 +32,7 @@ argparser.add_argument('template', nargs=1, type=argparse.FileType('r'))
 argparser.add_argument('datafile', nargs=1, type=argparse.FileType('r'))
 argparser.add_argument('outfile', nargs='?', type=argparse.FileType('w'), default=sys.stdout)
 
-def main():
+def main() -> None:
     args = argparser.parse_args()
     spec = load_template(args.template[0])
     datafile = args.datafile[0]
@@ -44,8 +46,9 @@ def main():
     else:
         print(f"Did not recognise file type of {datafile.name}")
 
-def _init_logging():
-#    logging.basicConfig(filename='mapper.log', encoding='utf-8', level=logging.INFO, format="%(asctime)s %(levelname)s: %(message)s")
+def _init_logging() -> None:
+#    logging.basicConfig(filename='mapper.log', encoding='utf-8', level=logging.INFO,
+#               format="%(asctime)s %(levelname)s: %(message)s")
 
     logger = logging.getLogger()
     logger.setLevel(logging.INFO)

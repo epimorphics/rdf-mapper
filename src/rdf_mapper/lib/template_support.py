@@ -1,34 +1,35 @@
 """
     Functions implementing all the mechanisms of template expansion and substitution.
 
-    Primary entry point is process_resource_spec, though some of the machinery such as 
+    Primary entry point is process_resource_spec, though some of the machinery such as
     pattern_expand and uri_expand may be usable in other contexts.
 
     Built in processing functions and registration of externally defined functions
-    are also implemented here since they need access parts of this machinery.
+    are also implemented here since they need access to parts of this machinery.
 """
 
-import sys
-import re
-from typing import Union
-
-from rdflib import Literal, XSD, URIRef, term, RDF, SKOS, BNode
-import uuid
-import hashlib
 import base64
-from urllib.parse import urljoin
-import dateparser
 import datetime
-from lib.template_state import TemplateState, ReconciliationRecord
-from lib.mapper_spec import ResourceSpec, PropSpec
-from lib.reconcile import requestReconcile, MatchResult, ReconcileRequest
+import hashlib
 import logging
+import re
+import uuid
+from collections.abc import Callable
+from typing import Any, Union
+from urllib.parse import urljoin
+
+import dateparser
+from rdflib import RDF, SKOS, XSD, BNode, Literal, URIRef, term
+
+from rdf_mapper.lib.mapper_spec import PropSpec, ResourceSpec
+from rdf_mapper.lib.reconcile import MatchResult, ReconcileRequest, requestReconcile
+from rdf_mapper.lib.template_state import ReconciliationRecord, TemplateState
 
 _VARPATTERN = re.compile(r"{([^}]*)}")
 
 def pattern_expand(template: str, state: TemplateState) -> str:
     """Return template with var references {var} expanded from the given dict-like context.
-    
+
        Allows pattern to include a chain of transforms {var | fn | fn2}.
        If the var references are embedded "foo{var}bar" the var will be converted to str.
        If the whole pattern is a var reference "{var}" can return a typed value if the
@@ -54,7 +55,7 @@ def pattern_expand(template: str, state: TemplateState) -> str:
 
 _PIPEPATTERN = re.compile(r"\s*\|\s*")
 
-def valueof_var(var: str, state: TemplateState):
+def valueof_var(var: str, state: TemplateState) -> Any:
     """Return the value of the var from the context.
 
        Supports "var | fn | fn" syntax for normalisation and processing of the value.
@@ -81,8 +82,10 @@ _POOR_URI_CHARS = re.compile(r"[^\w\-]+")
 
 def normalize(s: str) -> str:
     norm = _POOR_URI_CHARS.sub("_",s.strip())
-    if norm.endswith("_"): norm = norm[:-1]
-    if norm.startswith("_"): norm = norm[1:]
+    if norm.endswith("_"):
+        norm = norm[:-1]
+    if norm.startswith("_"):
+        norm = norm[1:]
     return norm
 
 _CURI_PATTERN = re.compile(r"([_A-Za-z][\w\-\.]*):([\w\-\.]+)")
@@ -92,7 +95,7 @@ _COMMA_SPLIT = re.compile(r"\s*,\s*")
 
 def uri_expand(pattern: str, namespaces: dict, state: TemplateState) -> str:
     """Expand a URI pattern.
-    
+
        Supports pattern forms:
        name   - simple name, place in datasets def namespace
        <row>  - create data URI base on file and row, for one_offs row is None and omit that segment
@@ -109,7 +112,7 @@ def uri_expand(pattern: str, namespaces: dict, state: TemplateState) -> str:
             row = state.get('$row')
             if row:
                 uriref = normalize(state.get('$file')) + "-" + str(row)
-                if state.get('$listIndex') != None:
+                if state.get('$listIndex') is not None:
                     # if nested resources in some list scan then need to include list index in generated resource ID
                     uriref = str(state.get('$listIndex')) + "/" + uriref
             else:
@@ -118,19 +121,18 @@ def uri_expand(pattern: str, namespaces: dict, state: TemplateState) -> str:
             parent = state.get("$parentID")
             if parent:
                 uriref = parent + "/" + state.get("$resourceID")
-                if state.get('$listIndex') != None:
+                if state.get('$listIndex') is not None:
                     uriref = uriref + "/" + str(state.get('$listIndex'))
             else:
                 uriref = None
         elif _HASH_PATTERN.fullmatch(uriref):
             params = _HASH_PATTERN.fullmatch(uriref).group(1)
             params = _COMMA_SPLIT.split(params)
-            hash = hashlib.sha1()
+            _hash = hashlib.sha1()
             for p in params:
-                if p.startswith("'") and p.endswith("'"):
-                    p = p[1:-1]
-                hash.update(bytes(str(state.get(p)),"UTF-8"))
-            uriref = base64.b32hexencode(hash.digest()).decode("UTF-8")
+                _p = p[1:-1] if p.startswith("'") and p.endswith("'") else p
+                _hash.update(bytes(str(state.get(_p)),"UTF-8"))
+            uriref = base64.b32hexencode(_hash.digest()).decode("UTF-8")
         else:
             uriref = pattern_expand(uriref, state.context)
             if uriref and isinstance(uriref, str):
@@ -150,9 +152,9 @@ def uri_expand(pattern: str, namespaces: dict, state: TemplateState) -> str:
         return uriref
     else:
         # Simple string, create as def in dataset namespace
-        id = f"{state.get('$datasetBase')}/def/{normalize(pattern)}"
-        _record_implicit_prop(pattern, id, None, state)
-        return id
+        _id = f"{state.get('$datasetBase')}/def/{normalize(pattern)}"
+        _record_implicit_prop(pattern, _id, None, state)
+        return _id
 
 def _expand_curi(uriref: str, namespaces: dict,) -> str:
     match = _CURI_PATTERN.fullmatch(uriref)
@@ -168,7 +170,7 @@ _DT_PATTERN = re.compile(r"^(.+)\^\^(<[^>]+>)$")
 
 def value_expand(pattern: str, namespaces: dict, state: TemplateState) -> term.Identifier:
     """Expand a value template to an RDF value.
-    
+
        Supports pattern forms:
        <uri-ref>        - uri reference using any of URI patterns in uri_expand
        <::backref>      - uri reference back to an already produced resource
@@ -177,7 +179,7 @@ def value_expand(pattern: str, namespaces: dict, state: TemplateState) -> term.I
        {var | fn | fn}  - literal value derived from var by series of transformations, may result in typed value
 
        Transform functions may be builtin or registered via register_fn.
-       Builtins include: asInt asDecimal asDate 
+       Builtins include: asInt asDecimal asDate
     """
     if pattern.startswith("<") and pattern.endswith(">") and not _DT_PATTERN.fullmatch(pattern):
         if pattern.startswith("<::"):
@@ -187,8 +189,8 @@ def value_expand(pattern: str, namespaces: dict, state: TemplateState) -> term.I
     else:
         val = pattern_expand(pattern, state)
         return _value_to_rdf(val, state)
-        
-def _value_to_rdf(val, state:TemplateState) -> Union[None, term.Identifier, list]:
+
+def _value_to_rdf(val: Any, state:TemplateState) -> Union[None, term.Identifier, list]:
     if isinstance(val, term.Identifier):
         return val
     elif val is None:
@@ -211,7 +213,7 @@ def _value_to_rdf(val, state:TemplateState) -> Union[None, term.Identifier, list
 def process_resource_spec(name: str, rs: ResourceSpec, state: TemplateState) -> URIRef:
     """Process a single resource specification in the current context."""
     state.add_to_context("$resourceID", name)
-    properties = rs.properties
+    # properties = rs.properties  # TODO check why this was there but unused
     namespaces = state.spec.namespaces
 
     # If the resource spec has a requires dict, check the row for matching values
@@ -222,7 +224,7 @@ def process_resource_spec(name: str, rs: ResourceSpec, state: TemplateState) -> 
             if expected is not None:
                 if value != expected:
                     logging.warning(
-                        f"Skipping resource {rs.name} on row {state.get('$row')} because value for {key} is {value}, which is different from the required value {expected}.")
+                        f"Skipping resource {rs.name} on row {state.get('$row')} because value for {key} is {value}, which is different from the required value {expected}.")  # noqa: E501
                     return None
             elif len(value) == 0:
                 logging.warning(f"Skipping resource {rs.name} on row {state.get('$row')} because value for {key} is empty.")
@@ -232,18 +234,18 @@ def process_resource_spec(name: str, rs: ResourceSpec, state: TemplateState) -> 
     if id_template == "<_>":
         resource = BNode()
     else:
-        id =uri_expand(id_template, namespaces, state)
-        resource = URIRef(id)
+        _id =uri_expand(id_template, namespaces, state)
+        resource = URIRef(_id)
     state.backlinks[name] = resource
     state.add_to_context("$parentID", str(resource))
 
     # Use an assigned type or default
-    type_template = rs.find_prop_defn("@type") 
+    type_template = rs.find_prop_defn("@type")
     if not type_template:
         type_template = "<{$datasetBase}/def/classes/{$resourceID}>"
-        id = uri_expand(type_template, namespaces, state)
-        _record_implicit_class(name, id, rs.spec.get("comment"), state)
-        type_uri = URIRef(id)
+        _id = uri_expand(type_template, namespaces, state)
+        _record_implicit_class(name, _id, rs.spec.get("comment"), state)
+        type_uri = URIRef(_id)
     else:
         type_uri = URIRef(uri_expand(type_template, namespaces, state))
     state.graph.add((resource, RDF.type, type_uri))
@@ -254,7 +256,7 @@ def process_resource_spec(name: str, rs: ResourceSpec, state: TemplateState) -> 
             logging.error(f"Skipping {prop} on row {state.get('$row')} due to exception {ex}")
     return resource
 
-def process_property_value(resource: URIRef, prop: str, template, state: TemplateState):
+def process_property_value(resource: URIRef, prop: str, template: Any, state: TemplateState) -> None:
     """Process a single property expansion."""
     if prop == "@id" or prop == "@type":
         return   # already processed
@@ -288,8 +290,8 @@ def process_property_value(resource: URIRef, prop: str, template, state: Templat
         try:
             value = value_expand(template, namespaces, state.child({"$prop": propname}))
         except ValueError as err:
-            # Skip lines with no value to lookup, 
-            logging.warn(f"Skipping property due to {err}")
+            # Skip lines with no value to lookup,
+            logging.warning(f"Skipping property due to {err}")
             value = None
     elif isinstance(template, dict):
         rs = ResourceSpec(template)
@@ -297,10 +299,10 @@ def process_property_value(resource: URIRef, prop: str, template, state: Templat
     else:
         raise NotImplementedError("Implement inline property specs")
     if isinstance(value, list):
-        for v in value: 
+        for v in value:
             state.graph.add((resource, propref, v))
     else:
-        if value != None:
+        if value is not None:
             if inverse:
                 triple = (value, propref, resource)
             else:
@@ -320,9 +322,9 @@ _AUTO_CLASS_SPEC = ResourceSpec({
     }
 })
 
-def _record_implicit_class(name: str, id: str, comment: str, state: TemplateState):
+def _record_implicit_class(name: str, _id: str, comment: str, state: TemplateState) -> None:
     if not state.record_auto_emit("class", name):
-        _create_resource({"id" : id, "label": name, "comment": comment}, state, _AUTO_CLASS_SPEC)
+        _create_resource({"id" : _id, "label": name, "comment": comment}, state, _AUTO_CLASS_SPEC)
 
 _AUTO_PROP_SPEC = ResourceSpec({
     "name": "AUTO_PROP",
@@ -334,21 +336,21 @@ _AUTO_PROP_SPEC = ResourceSpec({
     }
 })
 
-def _record_implicit_prop(name: str, id: str, comment: str, state: TemplateState):
+def _record_implicit_prop(name: str, _id: str, comment: str, state: TemplateState) -> None:
     if not state.record_auto_emit("prop", name):
-        _create_resource({"id" : id, "label": name, "comment": comment}, state, _AUTO_PROP_SPEC)
+        _create_resource({"id" : _id, "label": name, "comment": comment}, state, _AUTO_PROP_SPEC)
 
-# Built in transformation functions, provisional 
+# Built in transformation functions, provisional
 
 _FUN_REGISTRY = {}
 
-def register_fn(name: str, fn):
+def register_fn(name: str, fn: Callable) -> None:
     """Add a named function to the register of operation that can be used in var processing chains."""
     _FUN_REGISTRY[name] = fn
 
 _CALL_PATTERN = re.compile(r"([\w]+)\s*\((.*)\)")
 
-def find_fn(call: str):
+def find_fn(call: str) -> Callable:
     """
     Return the function corresponding to a function call spec.
 
@@ -365,7 +367,7 @@ def find_fn(call: str):
             register_fn(call, fn)
     return fn
 
-def asInt3(s: str, state: TemplateState = None):
+def asInt3(s: str, state: TemplateState = None)-> int:
     """Return triple integer value of string, used for testing."""
     return int(s)*3
 
@@ -415,7 +417,7 @@ def map_to(data: dict, state: TemplateState, rsname: str) -> URIRef:
     if not data:
         return None
     rs = state.spec.embedded_resources.get(rsname)
-    if not rs: 
+    if not rs:
             raise ValueError(f"map_to could not find embedded template called {rsname}")
     if not isinstance(data, dict):
         raise ValueError(f"map_to expecting data to be a dict but found {data}")
@@ -429,50 +431,51 @@ _PROXY_CONCEPT_SPEC = {
     }
 }
 
-def reconcile(key: str, state: TemplateState, name: str, type: str = None, endpoint: str = None, filters: list = None, skip_placeholders: bool = False) -> URIRef:
+def reconcile(key: str, state: TemplateState, name: str, _type: str = None, endpoint: str = None,
+              filters: list = None, skip_placeholders: bool = False) -> URIRef:
     """Reconcile the key/type.
-    
+
        name is used as local resource name if need to create a proxy.
        Assumes there's a reconciliationAPI key in the context.
        """
-    id = state.reconciled_ref(key, type)
-    if not id:
+    _id = state.reconciled_ref(key, _type)
+    if not _id:
         # TODO batch up reconciliation requests, instead of on-the-fly
         api = endpoint or state.get("$reconciliationAPI")
         if not api:
             raise ValueError("No reconciliationAPI configured")
         namespaces = state.spec.namespaces
-        if type:
-            type = _expand_curi(type, namespaces)
+        if _type:
+            _type = _expand_curi(_type, namespaces)
         if filters:
             filters = [(_expand_curi(p, namespaces),_expand_curi(v, namespaces)) for p,v in filters]
-        matches = requestReconcile(api, [ReconcileRequest(key, type, filters)])
+        matches = requestReconcile(api, [ReconcileRequest(key, _type, filters)])
         if len(matches) == 1:
             matchResult: MatchResult = matches[0]
-            keydesc = f"{key}-{type}" if type else key
+            keydesc = f"{key}-{_type}" if _type else key
             if matchResult.match:
                 logging.info(f"Reconciled {keydesc} to {str(matchResult)}")
-                id = URIRef(matchResult.match.id)
+                _id = URIRef(matchResult.match.id)
             else:
                 logging.error(f"Reconciliation failed for {keydesc} - {str(matchResult)}")
                 if not skip_placeholders:
                     rs = ResourceSpec(_PROXY_CONCEPT_SPEC | {"name" : name})
-                    reconcile_spec = {"key" : key, "keytype" : type or str(SKOS.Concept)}
-                    id =  _create_resource(reconcile_spec, state, rs)
+                    reconcile_spec = {"key" : key, "keytype" : _type or str(SKOS.Concept)}
+                    _id =  _create_resource(reconcile_spec, state, rs)
                     for pm in matchResult.possible_matches:
-                        pm.record_as_rdf(state.graph, id)
-            record = ReconciliationRecord(key, type, id)
+                        pm.record_as_rdf(state.graph, _id)
+            record = ReconciliationRecord(key, _type, _id)
             record.result = matchResult
             state.record_reconcile_request(record)
         else:
-            raise ValueError(f"Reconciliation attempt on {key}-{type} at {api} returned empty result list")
-    return id
+            raise ValueError(f"Reconciliation attempt on {key}-{_type} at {api} returned empty result list")
+    return _id
 
 def _make_hash(key: str) -> str:
-    hash = hashlib.sha1()
-    hash.update(bytes(str(key),"UTF-8"))
-    return base64.b32hexencode(hash.digest()).decode("UTF-8")
-        
+    _hash = hashlib.sha1()
+    _hash.update(bytes(str(key),"UTF-8"))
+    return base64.b32hexencode(_hash.digest()).decode("UTF-8")
+
 _AUTO_CONCEPT_HASH_SPEC = {
     "name" : "autoCVhash",
     "properties" : {
@@ -483,7 +486,7 @@ _AUTO_CONCEPT_HASH_SPEC = {
         "<skos:topConceptOf>": "<{schemeID}>",
         "^<skos:hasTopConcept>" : "<{schemeID}>",
     }
-}       
+}
 
 _AUTO_CONCEPT_SPEC = ResourceSpec({
     "name" : "autoCVlabel",
@@ -511,8 +514,8 @@ def autoCV(label: str, state: TemplateState, cv_name: str = None, cv_type: str =
     """Generate a skos concept, and associated scheme, for the given level or reuse one we did earlier."""
     if not  label or len(label) == 0:
         return None
-    id = state.get_auto_entry(cv_name, label)
-    if not id:
+    _id = state.get_auto_entry(cv_name, label)
+    if not _id:
         if not cv_name:
             cv_name = state.get("$prop")
         # Need to create concept, check concept scheme
@@ -522,9 +525,9 @@ def autoCV(label: str, state: TemplateState, cv_name: str = None, cv_type: str =
             schemeID = _create_resource({"name" : cv_name, "id" : base + "_scheme"}, state, _AUTO_CONCEPT_SCHEME_SPEC)
             state.record_auto_cv(cv_name +"_", "scheme", schemeID)
         idstr = base + "/" + (_make_hash(label ) if cv_type == "hash" else normalize(label))
-        id = _create_resource({"label" : label, "schemeID" : schemeID, "id": idstr}, state, _AUTO_CONCEPT_SPEC)
-        state.record_auto_cv(cv_name, label, id)
-    return id
+        _id = _create_resource({"label" : label, "schemeID" : schemeID, "id": idstr}, state, _AUTO_CONCEPT_SPEC)
+        state.record_auto_cv(cv_name, label, _id)
+    return _id
 
-def now(ignore, state: TemplateState) -> Literal:
+def now(_: Any, state: TemplateState) -> Literal:
     return Literal(datetime.datetime.now().isoformat(), datatype=XSD.dateTime)

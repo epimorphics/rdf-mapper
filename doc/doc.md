@@ -101,7 +101,7 @@ Namespaces used as prefixes in CURIs can be defined in the namespaces stanza, e.
 
 ```
 namespaces:
-  agvoc : https://data.agrimetrics.co.uk/def/
+  voc : https://epimorphics.com/def/
 ```
 
 Namespaces for `rdf`, `rdfs`, `owl`, `skos`, `skosxl`, `dct`, `qb` and `org` are builtin and don't need to be declared.
@@ -124,7 +124,7 @@ Variables available for use in patterns include the fields (columns) each data r
 
 | Value | Description |
 |---|---|
-| `$baseURI` | base of URI for all data and definitions, defaults to `https://data.agrimetrics.co.uk/datasets/` |
+| `$baseURI` | base of URI for all data and definitions, defaults to `https://epimorphics.com/datasets/` |
 | `$datasetID` | short id string for this dataset, must be set in the template |
 | `$file` | name of the file being ingested |
 | `$row` | row number of the line being ingested |

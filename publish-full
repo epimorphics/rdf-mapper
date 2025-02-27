@@ -1,2 +1,0 @@
-#!/bin/bash
-s-put http://localhost:3030/ds/data https://data.agrimetrics.co.uk/datasets/hse hse-full.ttl
