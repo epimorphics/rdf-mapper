@@ -1,9 +1,9 @@
 import unittest
 from io import StringIO
-from lib.template_processor import TemplateProcessor
-from lib.mapper_spec import MapperSpec
-import re
-from rdflib import Literal, URIRef, XSD
+
+from rdf_mapper.lib.mapper_spec import MapperSpec
+from rdf_mapper.lib.template_processor import TemplateProcessor
+
 
 class TestTemplateProcessor(unittest.TestCase):
     row1 = {"$row": 1, "$file": "file", "x": "foo", "y":"bar", "id": "123",
@@ -12,7 +12,7 @@ class TestTemplateProcessor(unittest.TestCase):
     row2 = {"$row": 2, "$file": "file", "id": "456", "label" : "label2"}
     row3 = {"$row": 3, "$file": "file", "id": "789", "label" : "label1"}
 
-    def test_default_mapping(self):
+    def test_default_mapping(self) -> None:
         self.do_test(
              MapperSpec({
                 "globals": {"$datasetID": "testds"},
@@ -24,24 +24,24 @@ class TestTemplateProcessor(unittest.TestCase):
                 }]
             }),
             [self.row1],
-            """@prefix ns1: <https://data.agrimetrics.co.uk/datasets/testds/def/> .
+            """@prefix ns1: <https://epimorphics.com/datasets/testds/def/> .
 @prefix owl: <http://www.w3.org/2002/07/owl#> .
 @prefix rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#> .
 @prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#> .
 
-<https://data.agrimetrics.co.uk/datasets/testds/data/registration/file-1> a <https://data.agrimetrics.co.uk/datasets/testds/def/classes/registration> ;
+<https://epimorphics.com/datasets/testds/data/registration/file-1> a <https://epimorphics.com/datasets/testds/def/classes/registration> ;
     ns1:id "123" .
 
 ns1:id a rdf:Property ;
     rdfs:label "id" .
 
-<https://data.agrimetrics.co.uk/datasets/testds/def/classes/registration> a owl:Class ;
+<https://epimorphics.com/datasets/testds/def/classes/registration> a owl:Class ;
     rdfs:label "registration" .
 
-"""
+"""  # noqa: E501
             )
 
-    def test_explicit_mapping(self):
+    def test_explicit_mapping(self) -> None:
         self.do_test(
              MapperSpec({
                 "globals": {"$datasetID": "testds"},
@@ -55,7 +55,7 @@ ns1:id a rdf:Property ;
                 }]
             }),
             [self.row1],
-            """@prefix ns1: <https://data.agrimetrics.co.uk/datasets/testds/def/> .
+            """@prefix ns1: <https://epimorphics.com/datasets/testds/def/> .
 @prefix rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#> .
 @prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#> .
 @prefix skos: <http://www.w3.org/2004/02/skos/core#> .
@@ -69,7 +69,7 @@ ns1:p a rdf:Property ;
 
 """)
 
-    def test_inverse_prop(self):
+    def test_inverse_prop(self) -> None:
         self.do_test(
              MapperSpec({
                 "globals": {"$datasetID": "testds"},
@@ -84,7 +84,7 @@ ns1:p a rdf:Property ;
                 }]
             }),
             [self.row1],
-            """@prefix ns1: <https://data.agrimetrics.co.uk/datasets/testds/def/> .
+            """@prefix ns1: <https://epimorphics.com/datasets/testds/def/> .
 @prefix rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#> .
 @prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#> .
 @prefix skos: <http://www.w3.org/2004/02/skos/core#> .
@@ -100,11 +100,11 @@ ns1:p a rdf:Property ;
 
 """)
 
-    def test_property_spec(self):
+    def test_property_spec(self) -> None:
         self.do_test(
              MapperSpec({
                 "globals": {"$datasetID": "testds"},
-                "namespaces" : { "aglib" : "https://data.agrimetrics.co.uk/library/def/" },
+                "namespaces" : { "aglib" : "https://epimorphics.com/library/def/" },
                 "properties" : [{
                     "name" : "regNo",
                     "comment" : "identifier for registration",
@@ -120,13 +120,13 @@ ns1:p a rdf:Property ;
                 }]
             }),
             [self.row1],
-            """@prefix ns1: <https://data.agrimetrics.co.uk/library/def/> .
+            """@prefix ns1: <https://epimorphics.com/library/def/> .
 @prefix owl: <http://www.w3.org/2002/07/owl#> .
 @prefix rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#> .
 @prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#> .
 @prefix xsd: <http://www.w3.org/2001/XMLSchema#> .
 
-<https://data.agrimetrics.co.uk/datasets/testds/data/registration/file-1> a <https://data.agrimetrics.co.uk/datasets/testds/def/classes/registration>,
+<https://epimorphics.com/datasets/testds/data/registration/file-1> a <https://epimorphics.com/datasets/testds/def/classes/registration>,
         ns1:Reg ;
     ns1:RegNo 123 .
 
@@ -134,16 +134,16 @@ ns1:RegNo a rdf:Property ;
     rdfs:label "regNo" ;
     rdfs:comment "identifier for registration" .
 
-<https://data.agrimetrics.co.uk/datasets/testds/def/classes/registration> a owl:Class ;
+<https://epimorphics.com/datasets/testds/def/classes/registration> a owl:Class ;
     rdfs:label "registration" .
 
 """)
 
-    def test_embedded_template(self):
+    def test_embedded_template(self) -> None:
         self.do_test(
              MapperSpec({
                 "globals": {"$datasetID": "testds"},
-                "namespaces" : { "aglib" : "https://data.agrimetrics.co.uk/library/def/" },
+                "namespaces" : { "aglib" : "https://epimorphics.com/library/def/" },
                 "resources" : [{
                     "name": "registration",
                     "properties": {
@@ -159,15 +159,15 @@ ns1:RegNo a rdf:Property ;
                         "qualifier" : "{qualifier}"
                     }
                 }]
-            }), 
+            }),
             [self.row1],
-            """@prefix ns1: <https://data.agrimetrics.co.uk/datasets/testds/def/> .
+            """@prefix ns1: <https://epimorphics.com/datasets/testds/def/> .
 @prefix owl: <http://www.w3.org/2002/07/owl#> .
 @prefix rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#> .
 @prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#> .
 
-<https://data.agrimetrics.co.uk/datasets/testds/data/registration/file-1> a <https://data.agrimetrics.co.uk/datasets/testds/def/classes/registration> ;
-    ns1:crop-link <https://data.agrimetrics.co.uk/datasets/testds/data/registration/file-1/crop-situation/0> ;
+<https://epimorphics.com/datasets/testds/data/registration/file-1> a <https://epimorphics.com/datasets/testds/def/classes/registration> ;
+    ns1:crop-link <https://epimorphics.com/datasets/testds/data/registration/file-1/crop-situation/0> ;
     ns1:regNo "123" .
 
 ns1:crop a rdf:Property ;
@@ -182,20 +182,20 @@ ns1:qualifier a rdf:Property ;
 ns1:regNo a rdf:Property ;
     rdfs:label "regNo" .
 
-<https://data.agrimetrics.co.uk/datasets/testds/data/registration/file-1/crop-situation/0> a <https://data.agrimetrics.co.uk/datasets/testds/def/classes/crop-situation> ;
+<https://epimorphics.com/datasets/testds/data/registration/file-1/crop-situation/0> a <https://epimorphics.com/datasets/testds/def/classes/crop-situation> ;
     ns1:crop "barley" ;
     ns1:qualifier "winter" .
 
-<https://data.agrimetrics.co.uk/datasets/testds/def/classes/crop-situation> a owl:Class ;
+<https://epimorphics.com/datasets/testds/def/classes/crop-situation> a owl:Class ;
     rdfs:label "crop-situation" .
 
-<https://data.agrimetrics.co.uk/datasets/testds/def/classes/registration> a owl:Class ;
+<https://epimorphics.com/datasets/testds/def/classes/registration> a owl:Class ;
     rdfs:label "registration" .
 
-"""
+"""  # noqa: E501
             )
-            
-    def test_one_off(self):
+
+    def test_one_off(self) -> None:
         self.do_test(
              MapperSpec({
                 "globals": {"$datasetID": "testds"},
@@ -207,17 +207,17 @@ ns1:regNo a rdf:Property ;
                     "<skos:prefLabel>" : "Health and Safety Executive@en"
                     }
                 }]
-            }), 
+            }),
             [self.row1],
             """@prefix org: <http://www.w3.org/ns/org#> .
 @prefix skos: <http://www.w3.org/2004/02/skos/core#> .
 
-<https://data.agrimetrics.co.uk/datasets/testds/data/HSE/HSE> a org:Organization ;
+<https://epimorphics.com/datasets/testds/data/HSE/HSE> a org:Organization ;
     skos:prefLabel "Health and Safety Executive"@en .
 
 """)
 
-    def test_auto_cv(self):
+    def test_auto_cv(self) -> None:
         self.do_test(
             MapperSpec({
                 "globals": {"$datasetID": "testds"},
@@ -231,33 +231,33 @@ ns1:regNo a rdf:Property ;
             }),
             [self.row1, self.row2, self.row3],
             """@prefix dcterms: <http://purl.org/dc/terms/> .
-@prefix ns1: <https://data.agrimetrics.co.uk/datasets/testds/def/> .
+@prefix ns1: <https://epimorphics.com/datasets/testds/def/> .
 @prefix owl: <http://www.w3.org/2002/07/owl#> .
 @prefix rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#> .
 @prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#> .
 @prefix skos: <http://www.w3.org/2004/02/skos/core#> .
 
-<http://example.com/123> a <https://data.agrimetrics.co.uk/datasets/testds/def/classes/registration> ;
-    ns1:prop <https://data.agrimetrics.co.uk/datasets/testds/def/scheme1/label1> .
+<http://example.com/123> a <https://epimorphics.com/datasets/testds/def/classes/registration> ;
+    ns1:prop <https://epimorphics.com/datasets/testds/def/scheme1/label1> .
 
-<http://example.com/456> a <https://data.agrimetrics.co.uk/datasets/testds/def/classes/registration> ;
-    ns1:prop <https://data.agrimetrics.co.uk/datasets/testds/def/scheme1/label2> .
+<http://example.com/456> a <https://epimorphics.com/datasets/testds/def/classes/registration> ;
+    ns1:prop <https://epimorphics.com/datasets/testds/def/scheme1/label2> .
 
-<http://example.com/789> a <https://data.agrimetrics.co.uk/datasets/testds/def/classes/registration> ;
-    ns1:prop <https://data.agrimetrics.co.uk/datasets/testds/def/scheme1/label1> .
+<http://example.com/789> a <https://epimorphics.com/datasets/testds/def/classes/registration> ;
+    ns1:prop <https://epimorphics.com/datasets/testds/def/scheme1/label1> .
 
 ns1:prop a rdf:Property ;
     rdfs:label "prop" .
 
-<https://data.agrimetrics.co.uk/datasets/testds/def/scheme1/label2> a skos:Concept ;
+<https://epimorphics.com/datasets/testds/def/scheme1/label2> a skos:Concept ;
     skos:inScheme ns1:scheme1_scheme ;
     skos:prefLabel "label2" ;
     skos:topConceptOf ns1:scheme1_scheme .
 
-<https://data.agrimetrics.co.uk/datasets/testds/def/classes/registration> a owl:Class ;
+<https://epimorphics.com/datasets/testds/def/classes/registration> a owl:Class ;
     rdfs:label "registration" .
 
-<https://data.agrimetrics.co.uk/datasets/testds/def/scheme1/label1> a skos:Concept ;
+<https://epimorphics.com/datasets/testds/def/scheme1/label1> a skos:Concept ;
     skos:inScheme ns1:scheme1_scheme ;
     skos:prefLabel "label1" ;
     skos:topConceptOf ns1:scheme1_scheme .
@@ -265,12 +265,12 @@ ns1:prop a rdf:Property ;
 ns1:scheme1_scheme a skos:ConceptScheme ;
     dcterms:description "Automatically generated concept scheme scheme1" ;
     dcterms:title "scheme1" ;
-    skos:hasTopConcept <https://data.agrimetrics.co.uk/datasets/testds/def/scheme1/label1>,
-        <https://data.agrimetrics.co.uk/datasets/testds/def/scheme1/label2> .
+    skos:hasTopConcept <https://epimorphics.com/datasets/testds/def/scheme1/label1>,
+        <https://epimorphics.com/datasets/testds/def/scheme1/label2> .
 
 """)
 
-    def test_auto_cv_hash(self):
+    def test_auto_cv_hash(self) -> None:
         self.do_test(
             MapperSpec({
                 "globals": {"$datasetID": "testds"},
@@ -284,33 +284,33 @@ ns1:scheme1_scheme a skos:ConceptScheme ;
             }),
             [self.row1, self.row2, self.row3],
             """@prefix dcterms: <http://purl.org/dc/terms/> .
-@prefix ns1: <https://data.agrimetrics.co.uk/datasets/testds/def/> .
+@prefix ns1: <https://epimorphics.com/datasets/testds/def/> .
 @prefix owl: <http://www.w3.org/2002/07/owl#> .
 @prefix rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#> .
 @prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#> .
 @prefix skos: <http://www.w3.org/2004/02/skos/core#> .
 
-<http://example.com/123> a <https://data.agrimetrics.co.uk/datasets/testds/def/classes/registration> ;
-    ns1:prop <https://data.agrimetrics.co.uk/datasets/testds/def/scheme1/LQOLIG61J9UEV7BN9JOF36NUSRGICPDM> .
+<http://example.com/123> a <https://epimorphics.com/datasets/testds/def/classes/registration> ;
+    ns1:prop <https://epimorphics.com/datasets/testds/def/scheme1/LQOLIG61J9UEV7BN9JOF36NUSRGICPDM> .
 
-<http://example.com/456> a <https://data.agrimetrics.co.uk/datasets/testds/def/classes/registration> ;
-    ns1:prop <https://data.agrimetrics.co.uk/datasets/testds/def/scheme1/O2GA7EPQ6EREHPUGTKU7VEUD30R6LLDA> .
+<http://example.com/456> a <https://epimorphics.com/datasets/testds/def/classes/registration> ;
+    ns1:prop <https://epimorphics.com/datasets/testds/def/scheme1/O2GA7EPQ6EREHPUGTKU7VEUD30R6LLDA> .
 
-<http://example.com/789> a <https://data.agrimetrics.co.uk/datasets/testds/def/classes/registration> ;
-    ns1:prop <https://data.agrimetrics.co.uk/datasets/testds/def/scheme1/LQOLIG61J9UEV7BN9JOF36NUSRGICPDM> .
+<http://example.com/789> a <https://epimorphics.com/datasets/testds/def/classes/registration> ;
+    ns1:prop <https://epimorphics.com/datasets/testds/def/scheme1/LQOLIG61J9UEV7BN9JOF36NUSRGICPDM> .
 
 ns1:prop a rdf:Property ;
     rdfs:label "prop" .
 
-<https://data.agrimetrics.co.uk/datasets/testds/def/scheme1/O2GA7EPQ6EREHPUGTKU7VEUD30R6LLDA> a skos:Concept ;
+<https://epimorphics.com/datasets/testds/def/scheme1/O2GA7EPQ6EREHPUGTKU7VEUD30R6LLDA> a skos:Concept ;
     skos:inScheme ns1:scheme1_scheme ;
     skos:prefLabel "label2" ;
     skos:topConceptOf ns1:scheme1_scheme .
 
-<https://data.agrimetrics.co.uk/datasets/testds/def/classes/registration> a owl:Class ;
+<https://epimorphics.com/datasets/testds/def/classes/registration> a owl:Class ;
     rdfs:label "registration" .
 
-<https://data.agrimetrics.co.uk/datasets/testds/def/scheme1/LQOLIG61J9UEV7BN9JOF36NUSRGICPDM> a skos:Concept ;
+<https://epimorphics.com/datasets/testds/def/scheme1/LQOLIG61J9UEV7BN9JOF36NUSRGICPDM> a skos:Concept ;
     skos:inScheme ns1:scheme1_scheme ;
     skos:prefLabel "label1" ;
     skos:topConceptOf ns1:scheme1_scheme .
@@ -318,12 +318,12 @@ ns1:prop a rdf:Property ;
 ns1:scheme1_scheme a skos:ConceptScheme ;
     dcterms:description "Automatically generated concept scheme scheme1" ;
     dcterms:title "scheme1" ;
-    skos:hasTopConcept <https://data.agrimetrics.co.uk/datasets/testds/def/scheme1/LQOLIG61J9UEV7BN9JOF36NUSRGICPDM>,
-        <https://data.agrimetrics.co.uk/datasets/testds/def/scheme1/O2GA7EPQ6EREHPUGTKU7VEUD30R6LLDA> .
+    skos:hasTopConcept <https://epimorphics.com/datasets/testds/def/scheme1/LQOLIG61J9UEV7BN9JOF36NUSRGICPDM>,
+        <https://epimorphics.com/datasets/testds/def/scheme1/O2GA7EPQ6EREHPUGTKU7VEUD30R6LLDA> .
 
 """)
 
-    def test_property_value_list(self):
+    def test_property_value_list(self) -> None:
         self.do_test(
             MapperSpec({
                 "globals": {"$datasetID": "testds"},
@@ -339,25 +339,25 @@ ns1:scheme1_scheme a skos:ConceptScheme ;
                 }]
             }),
             [self.row1],
-            """@prefix ns1: <https://data.agrimetrics.co.uk/datasets/testds/def/> .
+            """@prefix ns1: <https://epimorphics.com/datasets/testds/def/> .
 @prefix owl: <http://www.w3.org/2002/07/owl#> .
 @prefix rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#> .
 @prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#> .
 
-<http://example.com/123> a <https://data.agrimetrics.co.uk/datasets/testds/def/classes/registration> ;
+<http://example.com/123> a <https://epimorphics.com/datasets/testds/def/classes/registration> ;
     ns1:prop <http://example.com/value/foo>,
         "bar" .
 
 ns1:prop a rdf:Property ;
     rdfs:label "prop" .
 
-<https://data.agrimetrics.co.uk/datasets/testds/def/classes/registration> a owl:Class ;
+<https://epimorphics.com/datasets/testds/def/classes/registration> a owl:Class ;
     rdfs:label "registration" .
 
 """
         )
 
-    def test_nested_resource_spec(self):
+    def test_nested_resource_spec(self) -> None:
         self.do_test(
             MapperSpec({
                 "globals": {"$datasetID": "testds"},
@@ -376,13 +376,13 @@ ns1:prop a rdf:Property ;
                 }]
             }),
             [self.row1],
-            """@prefix ns1: <https://data.agrimetrics.co.uk/datasets/testds/def/> .
+            """@prefix ns1: <https://epimorphics.com/datasets/testds/def/> .
 @prefix owl: <http://www.w3.org/2002/07/owl#> .
 @prefix rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#> .
 @prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#> .
 
-<http://example.com/123> a <https://data.agrimetrics.co.uk/datasets/testds/def/classes/registration> ;
-    ns1:prop [ a <https://data.agrimetrics.co.uk/datasets/testds/def/classes/nested> ;
+<http://example.com/123> a <https://epimorphics.com/datasets/testds/def/classes/registration> ;
+    ns1:prop [ a <https://epimorphics.com/datasets/testds/def/classes/nested> ;
             ns1:val "foo" ] .
 
 ns1:prop a rdf:Property ;
@@ -391,21 +391,22 @@ ns1:prop a rdf:Property ;
 ns1:val a rdf:Property ;
     rdfs:label "val" .
 
-<https://data.agrimetrics.co.uk/datasets/testds/def/classes/nested> a owl:Class ;
+<https://epimorphics.com/datasets/testds/def/classes/nested> a owl:Class ;
     rdfs:label "nested" .
 
-<https://data.agrimetrics.co.uk/datasets/testds/def/classes/registration> a owl:Class ;
+<https://epimorphics.com/datasets/testds/def/classes/registration> a owl:Class ;
     rdfs:label "registration" .
 
 """
         )
-    def do_test(self, spec: MapperSpec, rows: list, expected: str):
+    def do_test(self, spec: MapperSpec, rows: list, expected: str) -> None:
         self.maxDiff = 5000
         output = StringIO("")
         proc = TemplateProcessor(spec, "test", output)
         for row in rows:
             result = proc.process_row(row).serialize(format='turtle')
-        if not expected: print(result)
+        if not expected:
+            print(result)
         self.assertEqual(expected, result)
 
 if __name__ == '__main__':

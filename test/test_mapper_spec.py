@@ -1,9 +1,11 @@
 import unittest
-from lib.mapper_spec import MapperSpec, ResourceSpec
+
+from rdf_mapper.lib.mapper_spec import ResourceSpec
+
 
 class TestMapperSpec(unittest.TestCase):
 
-    def test_property_listify(self):
+    def test_property_listify(self) -> None:
         rs = ResourceSpec({
             "name" : "test",
             "properties": {
