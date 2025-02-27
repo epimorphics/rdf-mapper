@@ -1,7 +1,10 @@
 from __future__ import annotations
+
 from rdflib import Graph, URIRef
+
 from rdf_mapper.lib.mapper_spec import MapperSpec
 from rdf_mapper.lib.reconcile import MatchResult
+
 
 class TemplateState:
     """
@@ -12,7 +15,8 @@ class TemplateState:
     * the transform specification
     * the binding context with both data from this row and global context
     * backlinks giving the URIs for resources already generated for this row
-    * the RDF graph being generated, this graph might span the whole transform so far or some small blocker for just this row or a batch of rows
+    * the RDF graph being generated, this graph might span the whole transform so far or some small
+      block for just this row or a batch of rows
     * a backlog of reconciliation requests to run in batches
 
     The context will include the following variables:
@@ -35,10 +39,10 @@ class TemplateState:
         self.backlinks = {}
         self.reconcile_stack = reconcile_stack
 
-    def add_to_context(self, prop: str, value):
+    def add_to_context(self, prop: str, value: str) -> None:
         self.context[prop] = value
 
-    def get(self, prop: str):
+    def get(self, prop: str) -> None:
         return self.context.get(prop)
 
     def child(self, subcontext: dict) -> TemplateState:
@@ -47,28 +51,28 @@ class TemplateState:
         child.backlinks = self.backlinks
         return child
 
-    def record_reconcile_request(self, record: ReconciliationRecord):
+    def record_reconcile_request(self, record: ReconciliationRecord) -> None:
         """Record a reconciliation request, which might or might not have already been attempted and succeeded."""
         self.reconcile_stack[record.lookup_key()] = record
-    
+
     def reconciled_ref(self, key: str, keytype: str) -> URIRef:
         """Return the URI for a reconciliation result or proxy if we have created one"""
         record =  self.reconcile_stack.get(f"{key}-{keytype}")
         return record.id if record else None
-    
-    def record_auto_cv(self, name: str, label: str, id: URIRef):
-        """Record an auto generated CV entry. 
-        
+
+    def record_auto_cv(self, name: str, label: str, _id: URIRef) -> None:
+        """Record an auto generated CV entry.
+
            We reuse the backlinks dict since cv names and backlink names will be distinct.
         """
-        self.backlinks[f"{name}/{label}"] = id
-    
-    def record_auto_emit(self, type: str, label: str) -> bool:
+        self.backlinks[f"{name}/{label}"] = _id
+
+    def record_auto_emit(self, _type: str, label: str) -> bool:
         """Record an auto emitted property/class spec. Return true if already known.
-        
+
            We reuse the backlinks dict since cv names and backlink names will be distinct.
         """
-        key = f"{type}#{label}"
+        key = f"{_type}#{label}"
         if key in self.backlinks:
             return True
         else:
@@ -80,17 +84,18 @@ class TemplateState:
         return self.backlinks.get(f"{name}/{label}")
 
 class ReconciliationRecord:
-    def __init__(self, key: str, keytype: str, id: URIRef = None) -> None:
-        self.id = id
+    def __init__(self, key: str, keytype: str, _id: URIRef = None) -> None:
+        self._id = id
         self.key = key
         self.keytype = keytype
         self.result: MatchResult = None
 
-    def lookup_key(self): return f"{self.key}-{self.keytype}"
+    def lookup_key(self) -> str:
+        return f"{self.key}-{self.keytype}"
 
     def id(self) -> URIRef:
-        if self.id:
-            return self.id
+        if self._id:
+            return self._id
         elif self.result and self.result.match:
             return URIRef(self.result.match.id)
         else:

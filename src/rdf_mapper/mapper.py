@@ -47,7 +47,8 @@ def main() -> None:
         print(f"Did not recognise file type of {datafile.name}")
 
 def _init_logging() -> None:
-#    logging.basicConfig(filename='mapper.log', encoding='utf-8', level=logging.INFO, format="%(asctime)s %(levelname)s: %(message)s")
+#    logging.basicConfig(filename='mapper.log', encoding='utf-8', level=logging.INFO,
+#               format="%(asctime)s %(levelname)s: %(message)s")
 
     logger = logging.getLogger()
     logger.setLevel(logging.INFO)

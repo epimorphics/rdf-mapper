@@ -1,29 +1,32 @@
 """
-    Support for reconciliation use the OpernRefine style reconciliation API.
+    Support for reconciliation use the OpenRefine style reconciliation API.
 """
 
-import requests
 import json
-from rdflib import URIRef, BNode, Graph, Literal, XSD
 from typing import List
+
+import requests
+from rdflib import XSD, BNode, Graph, Literal, URIRef
+
 
 class ReconcileRequest:
     """Request should have text query, option type (uri string) and optional filters.
-    
+
        Filters are pairs (property uri string, filter value).
        We don't use a dict because embedding dict literals in the patterns
        would mean using a real parser instead of regexs."""
-    def __init__(self, query: str, type: str = None, filters: List[tuple] = []) -> None:
+    def __init__(self, query: str, type: str = None, filters: List[tuple] = []) -> None:  # noqa: A002
         self.query = query
         self.type = type
         self.filters = filters
-        
+
 def requestReconcile(endpoint: str, terms: List[ReconcileRequest]) -> list:
     """Request a batch of reconciliations."""
     batch  = {}
     for i, term in enumerate(terms):
         q = {"query" : term.query}
-        if term.type: q["type"] = term.type
+        if term.type:
+            q["type"] = term.type
         if term.filters:
             filters = []
             for prop, val in term.filters:
@@ -35,7 +38,7 @@ def requestReconcile(endpoint: str, terms: List[ReconcileRequest]) -> list:
     if response.status_code != 200:
         raise ValueError(f"Failure using reconciliation service {response.status_code} {response.content}")
     results = [None] * len(terms)
-    for key, match in response.json().items():        
+    for key, match in response.json().items():
         results[int(key)] = MatchResult(match.get("result"))
     return results
 
@@ -54,8 +57,8 @@ class MatchEntry:
 
     def __str__(self) -> str:
         return f"{self.name} matched at {self.score}"
-    
-    def record_as_rdf(self, g: Graph, proxy: URIRef):
+
+    def record_as_rdf(self, g: Graph, proxy: URIRef) -> None:
         node = BNode()
         g.add((node, REC_SCORE, Literal(self.score, datatype=XSD.decimal)))
         g.add((node, REC_MATCH, URIRef(self.id)))
