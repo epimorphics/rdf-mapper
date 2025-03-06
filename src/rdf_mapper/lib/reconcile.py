@@ -3,10 +3,10 @@
 """
 
 import json
-from typing import List
+from typing import Any, cast
 
 import requests
-from rdflib import XSD, BNode, Graph, Literal, URIRef
+from rdflib import XSD, BNode, Graph, IdentifiedNode, Literal, URIRef
 
 
 class ReconcileRequest:
@@ -15,16 +15,16 @@ class ReconcileRequest:
        Filters are pairs (property uri string, filter value).
        We don't use a dict because embedding dict literals in the patterns
        would mean using a real parser instead of regexs."""
-    def __init__(self, query: str, type: str = None, filters: List[tuple] = []) -> None:  # noqa: A002
+    def __init__(self, query: str, type: str|None = None, filters: list[tuple] = []) -> None:  # noqa: A002
         self.query = query
         self.type = type
         self.filters = filters
 
-def requestReconcile(endpoint: str, terms: List[ReconcileRequest]) -> list:
+def requestReconcile(endpoint: str, terms: list[ReconcileRequest]) -> list:
     """Request a batch of reconciliations."""
     batch  = {}
     for i, term in enumerate(terms):
-        q = {"query" : term.query}
+        q: dict[str, str|list[str]] = {"query" : term.query}
         if term.type:
             q["type"] = term.type
         if term.filters:
@@ -37,7 +37,7 @@ def requestReconcile(endpoint: str, terms: List[ReconcileRequest]) -> list:
     response = requests.post(endpoint, data=query)
     if response.status_code != 200:
         raise ValueError(f"Failure using reconciliation service {response.status_code} {response.content}")
-    results = [None] * len(terms)
+    results: list[MatchResult|None] = [None] * len(terms)
     for key, match in response.json().items():
         results[int(key)] = MatchResult(match.get("result"))
     return results
@@ -49,8 +49,8 @@ REC_MATCH = URIRef(RECONCILIATION_VOCAB + "match")
 REC_LABEL = URIRef(RECONCILIATION_VOCAB + "label")
 
 class MatchEntry:
-    def __init__(self, result: dict) -> None:
-        self.id = result.get("id")
+    def __init__(self, result: dict[str, Any]) -> None:
+        self.id = cast(str, result.get("id"))
         self.name = result.get("name")
         self.score = result.get("score")
         self.matched = result.get("match")
@@ -58,7 +58,7 @@ class MatchEntry:
     def __str__(self) -> str:
         return f"{self.name} matched at {self.score}"
 
-    def record_as_rdf(self, g: Graph, proxy: URIRef) -> None:
+    def record_as_rdf(self, g: Graph, proxy: IdentifiedNode) -> None:
         node = BNode()
         g.add((node, REC_SCORE, Literal(self.score, datatype=XSD.decimal)))
         g.add((node, REC_MATCH, URIRef(self.id)))

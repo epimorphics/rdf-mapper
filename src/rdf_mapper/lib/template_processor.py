@@ -22,7 +22,10 @@ class TemplateProcessor:
         self.context = self.spec.context.new_child({'$file' : filename, '$row' : None})
         self.state = TemplateState(self.context, self.graph, self.spec)
         for one_off in spec.one_offs:
-            process_resource_spec(one_off.name, one_off, self.state)
+            if not one_off.name:
+                logging.error(f"One-off resource has no name {one_off}")
+            else:
+                process_resource_spec(one_off.name, one_off, self.state)
 
     def process_row(self, data: dict) -> Graph:
         """
@@ -34,7 +37,10 @@ class TemplateProcessor:
         state = self.state.child(data)
         try:
             for rspec in self.spec.resources:
-                process_resource_spec(rspec.name, rspec, state)
+                if not rspec.name:
+                    logging.error(f"Resource has no name {rspec}")
+                else:
+                    process_resource_spec(rspec.name, rspec, state)
         except Exception as err:
             logging.error(f"Failure on row {self.row} with {err}")
         return self.graph

@@ -1,6 +1,9 @@
 from __future__ import annotations
 
-from rdflib import Graph, URIRef
+from collections import ChainMap
+from typing import Any
+
+from rdflib import Graph, IdentifiedNode, URIRef
 
 from rdf_mapper.lib.mapper_spec import MapperSpec
 from rdf_mapper.lib.reconcile import MatchResult
@@ -28,11 +31,11 @@ class TemplateState:
     * $datasetBase - base URI for this dataset by default computed from baseURI and datasetID
     * $resourceID  - short ID for the resource being generated, uses the name field in the template
     * $parentID    - full URI for parent resource when processing embedded templates
-    * $listIndex   - index it list when process a list of results from a chained transform
+    * $listIndex   - index in list when processing a list of results from a chained transform
     * $reconciliationAPI - API endpoint for reconciliation, may be global or for a specific property
     """
 
-    def __init__(self, context: dict, graph: Graph = Graph(), spec: MapperSpec = None, reconcile_stack: dict = {}) -> None:
+    def __init__(self, context: ChainMap[str,Any], graph: Graph, spec: MapperSpec, reconcile_stack: dict = {}) -> None:
         self.spec = spec
         self.context = context
         self.graph = graph
@@ -42,7 +45,7 @@ class TemplateState:
     def add_to_context(self, prop: str, value: str) -> None:
         self.context[prop] = value
 
-    def get(self, prop: str) -> None:
+    def get(self, prop: str) -> str | None:
         return self.context.get(prop)
 
     def child(self, subcontext: dict) -> TemplateState:
@@ -55,12 +58,12 @@ class TemplateState:
         """Record a reconciliation request, which might or might not have already been attempted and succeeded."""
         self.reconcile_stack[record.lookup_key()] = record
 
-    def reconciled_ref(self, key: str, keytype: str) -> URIRef:
+    def reconciled_ref(self, key: str, keytype: str | None) -> URIRef | None:
         """Return the URI for a reconciliation result or proxy if we have created one"""
         record =  self.reconcile_stack.get(f"{key}-{keytype}")
         return record.id if record else None
 
-    def record_auto_cv(self, name: str, label: str, _id: URIRef) -> None:
+    def record_auto_cv(self, name: str, label: str, _id: IdentifiedNode) -> None:
         """Record an auto generated CV entry.
 
            We reuse the backlinks dict since cv names and backlink names will be distinct.
@@ -79,21 +82,21 @@ class TemplateState:
             self.backlinks[key] = True
             return False
 
-    def get_auto_entry(self, name: str, label: str) -> URIRef:
+    def get_auto_entry(self, name: str, label: str) -> URIRef | None:
         """If there is an auto CV entry for this already return it."""
         return self.backlinks.get(f"{name}/{label}")
 
 class ReconciliationRecord:
-    def __init__(self, key: str, keytype: str, _id: URIRef = None) -> None:
-        self._id = id
+    def __init__(self, key: str, keytype: str | None, _id: IdentifiedNode | None = None) -> None:
+        self._id = _id
         self.key = key
         self.keytype = keytype
-        self.result: MatchResult = None
+        self.result: MatchResult | None = None
 
     def lookup_key(self) -> str:
         return f"{self.key}-{self.keytype}"
 
-    def id(self) -> URIRef:
+    def id(self) -> IdentifiedNode | None:
         if self._id:
             return self._id
         elif self.result and self.result.match:

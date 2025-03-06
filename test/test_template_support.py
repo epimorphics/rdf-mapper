@@ -63,7 +63,7 @@ class TestTemplateSupport(unittest.TestCase):
             "l" : "en",
             "d" : "1.23",
             "list" : "foo, bar"
-        }))
+        }), Graph(), spec)
 
         self.assertEqual(
             value_expand("hell{x}o", spec.namespaces, state),
@@ -107,14 +107,14 @@ class TestTemplateSupport(unittest.TestCase):
         spec = MapperSpec({"globals": {"$datasetID": "testds"}})
         state = TemplateState(spec.context.new_child({
             "$row": 3, "$file": "file", "x": "foo-bar-baz"
-        }))
+        }), Graph(), spec)
         self.assertEqual(
             value_expand("{x | split('-')}", spec.namespaces, state),
             list([Literal("foo"), Literal("bar"), Literal("baz")]))
 
     def test_now(self) -> None:
         spec = MapperSpec({"globals": {"$datasetID": "testds"}})
-        state = TemplateState(spec.context.new_child({"$row": 1, "$file": "file"}))
+        state = TemplateState(spec.context.new_child({"$row": 1, "$file": "file"}), Graph(), spec)
         v = value_expand("{|now}", spec.namespaces, state)
         self.assertTrue(isinstance(v, Literal))
         self.assertEqual(v.datatype, XSD.dateTime)

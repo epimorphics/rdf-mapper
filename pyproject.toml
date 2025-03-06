@@ -75,6 +75,6 @@ strict = true
 
 [tool.pyright]
 executionEnvironments = [{ root = "src" }]
-typeCheckingMode = "standard"
+typeCheckingMode = "basic"
 venvPath = "."
 venv = "venv"

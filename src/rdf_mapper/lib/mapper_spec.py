@@ -7,7 +7,7 @@ import importlib.util
 import os
 import sys
 from collections import ChainMap
-from typing import Any, TextIO
+from typing import Any, NoReturn, TextIO, cast
 
 import yaml
 
@@ -32,7 +32,7 @@ class MapperSpec:
     def __init__(self, spec: dict = {}) -> None:
         self.spec = spec
         self.globals = self._getAsDict("globals")
-        self.context = ChainMap(self.globals, self.builtins)
+        self.context: ChainMap[str, Any] = ChainMap(self.globals, self.builtins)
         self.namespaces = ChainMap(self._getAsDict("namespaces"), self.builtinNamespaces)
         self.one_offs = [ResourceSpec(spec) for spec in self._getAsList("one_offs")]
         self._init_defaults()
@@ -54,10 +54,11 @@ class MapperSpec:
     def _load_imports(self) -> None:
         """Load yaml or python imports into the spec in order given."""
         self.imports = {}
-        if not self.spec.get("imports"):
+        imports = self.spec.get("imports")
+        if not imports:
             return
         acc_module = MapperSpec({})
-        for module_name in self.spec.get("imports"):
+        for module_name in imports:
             fpath = _find_file(module_name)
             if not fpath:
                 _error(f"Failed to find module {module_name}")
@@ -68,9 +69,13 @@ class MapperSpec:
             elif module_name.endswith(".py"):
                 name = module_name.replace(".py", "")
                 spec = importlib.util.spec_from_file_location(name, fpath)
-                module = importlib.util.module_from_spec(spec)
-                sys.modules[name] = module
-                spec.loader.exec_module(module)
+                if spec:
+                    module = importlib.util.module_from_spec(spec)
+                    if spec.loader:
+                        sys.modules[name] = module
+                        spec.loader.exec_module(module)
+                else:
+                    _error(f"Failed to load module {module_name}")
             else:
                 _error(f"Module {module_name} not a recognized type")
         merged = acc_module.merge(self)
@@ -112,13 +117,13 @@ class MapperSpec:
             }
         )
 
-
-def _error(message: str) -> None:
+def _error(message: str) -> NoReturn:
     print(f"Badly formatted mapping spec: {message}", file=sys.stderr)
     sys.exit(1)
 
 
-def _find_file(fname: str) -> str:
+def _find_file(fname: str) -> str | None:
+    """Search for a file in the current directory and its subdirectories."""
     for root, dirs, files in os.walk(os.getcwd()):
         if fname in files:
             return root + "/" + fname
@@ -135,7 +140,7 @@ class PropSpec:
         if isinstance(spec, dict) and "name" in spec and "prop" in spec:
             self.spec = spec
             self.name = spec.get("name")
-            self.prop = spec.get("prop")
+            self.prop = cast(str, spec.get("prop"))
             self.type = None
             ty = spec.get("type")
             if ty:
@@ -173,20 +178,21 @@ def _as_arg(value: Any) -> str:
 class ResourceSpec:
     def __init__(self, spec: dict) -> None:
         if isinstance(spec, dict) and "name" in spec and "properties" in spec:
+            props = spec.get("properties")
             self.spec = spec
             self.name = spec.get("name")
-            self.properties = _listify(spec.get("properties"))
+            self.properties = _listify(props)
             self.requires = spec.get("requires")
             if self.requires is not None and not isinstance(self.requires, dict):
                 _error(f"Resource spec requires must be a dictionary, was {self.requires}")
         else:
             _error(f"Resource spec must be a map with at least name and some properties, was {spec}")
 
-    def find_prop_defn(self, name: str) -> str:
+    def find_prop_defn(self, name: str) -> str | None:
         return next((p[1] for p in self.properties if p[0] == name), None)
 
 
-def _listify(props: list[Any]) -> list:
+def _listify(props: Any) -> list:
     """Flatten set of property specs to a list of pairs.
 
     We allow the properties of a class to be defined as a dict
