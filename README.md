@@ -35,7 +35,7 @@ Check for package updates:
 
 ## usage
 
-    rdf_mapper template input [output]
+    mapper template input [output]
 
 Generates a `mapper.log` with record of actions and errors, errors also flagged to stderr.
 

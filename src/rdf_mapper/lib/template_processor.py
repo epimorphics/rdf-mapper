@@ -47,5 +47,8 @@ class TemplateProcessor:
 
     def finalize(self) -> None:
         logging.info(f"Processed {self.row} lines")
+        for ns, uri in self.spec.namespaces.items():
+            self.graph.bind(ns, uri)
+        self.graph.bind("def", f"{self.spec.context['$datasetBase']}/def/")
         self.output.write(self.graph.serialize(format='turtle'))
         self.output.close()

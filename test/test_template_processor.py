@@ -29,13 +29,13 @@ class TestTemplateProcessor(unittest.TestCase):
 @prefix rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#> .
 @prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#> .
 
-<https://epimorphics.com/datasets/testds/data/registration/file-1> a <https://epimorphics.com/datasets/testds/def/classes/registration> ;
+<https://epimorphics.com/datasets/testds/data/registration/file-1> a ns1:registration ;
     ns1:id "123" .
 
 ns1:id a rdf:Property ;
     rdfs:label "id" .
 
-<https://epimorphics.com/datasets/testds/def/classes/registration> a owl:Class ;
+ns1:registration a owl:Class ;
     rdfs:label "registration" .
 
 """  # noqa: E501
@@ -126,7 +126,7 @@ ns1:p a rdf:Property ;
 @prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#> .
 @prefix xsd: <http://www.w3.org/2001/XMLSchema#> .
 
-<https://epimorphics.com/datasets/testds/data/registration/file-1> a <https://epimorphics.com/datasets/testds/def/classes/registration>,
+<https://epimorphics.com/datasets/testds/data/registration/file-1> a <https://epimorphics.com/datasets/testds/def/registration>,
         ns1:Reg ;
     ns1:RegNo 123 .
 
@@ -134,7 +134,7 @@ ns1:RegNo a rdf:Property ;
     rdfs:label "regNo" ;
     rdfs:comment "identifier for registration" .
 
-<https://epimorphics.com/datasets/testds/def/classes/registration> a owl:Class ;
+<https://epimorphics.com/datasets/testds/def/registration> a owl:Class ;
     rdfs:label "registration" .
 
 """)
@@ -166,7 +166,7 @@ ns1:RegNo a rdf:Property ;
 @prefix rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#> .
 @prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#> .
 
-<https://epimorphics.com/datasets/testds/data/registration/file-1> a <https://epimorphics.com/datasets/testds/def/classes/registration> ;
+<https://epimorphics.com/datasets/testds/data/registration/file-1> a ns1:registration ;
     ns1:crop-link <https://epimorphics.com/datasets/testds/data/registration/file-1/crop-situation/0> ;
     ns1:regNo "123" .
 
@@ -182,14 +182,14 @@ ns1:qualifier a rdf:Property ;
 ns1:regNo a rdf:Property ;
     rdfs:label "regNo" .
 
-<https://epimorphics.com/datasets/testds/data/registration/file-1/crop-situation/0> a <https://epimorphics.com/datasets/testds/def/classes/crop-situation> ;
+<https://epimorphics.com/datasets/testds/data/registration/file-1/crop-situation/0> a ns1:crop-situation ;
     ns1:crop "barley" ;
     ns1:qualifier "winter" .
 
-<https://epimorphics.com/datasets/testds/def/classes/crop-situation> a owl:Class ;
+ns1:crop-situation a owl:Class ;
     rdfs:label "crop-situation" .
 
-<https://epimorphics.com/datasets/testds/def/classes/registration> a owl:Class ;
+ns1:registration a owl:Class ;
     rdfs:label "registration" .
 
 """  # noqa: E501
@@ -237,13 +237,13 @@ ns1:regNo a rdf:Property ;
 @prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#> .
 @prefix skos: <http://www.w3.org/2004/02/skos/core#> .
 
-<http://example.com/123> a <https://epimorphics.com/datasets/testds/def/classes/registration> ;
+<http://example.com/123> a ns1:registration ;
     ns1:prop <https://epimorphics.com/datasets/testds/def/scheme1/label1> .
 
-<http://example.com/456> a <https://epimorphics.com/datasets/testds/def/classes/registration> ;
+<http://example.com/456> a ns1:registration ;
     ns1:prop <https://epimorphics.com/datasets/testds/def/scheme1/label2> .
 
-<http://example.com/789> a <https://epimorphics.com/datasets/testds/def/classes/registration> ;
+<http://example.com/789> a ns1:registration ;
     ns1:prop <https://epimorphics.com/datasets/testds/def/scheme1/label1> .
 
 ns1:prop a rdf:Property ;
@@ -254,7 +254,7 @@ ns1:prop a rdf:Property ;
     skos:prefLabel "label2" ;
     skos:topConceptOf ns1:scheme1_scheme .
 
-<https://epimorphics.com/datasets/testds/def/classes/registration> a owl:Class ;
+ns1:registration a owl:Class ;
     rdfs:label "registration" .
 
 <https://epimorphics.com/datasets/testds/def/scheme1/label1> a skos:Concept ;
@@ -290,13 +290,13 @@ ns1:scheme1_scheme a skos:ConceptScheme ;
 @prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#> .
 @prefix skos: <http://www.w3.org/2004/02/skos/core#> .
 
-<http://example.com/123> a <https://epimorphics.com/datasets/testds/def/classes/registration> ;
+<http://example.com/123> a ns1:registration ;
     ns1:prop <https://epimorphics.com/datasets/testds/def/scheme1/LQOLIG61J9UEV7BN9JOF36NUSRGICPDM> .
 
-<http://example.com/456> a <https://epimorphics.com/datasets/testds/def/classes/registration> ;
+<http://example.com/456> a ns1:registration ;
     ns1:prop <https://epimorphics.com/datasets/testds/def/scheme1/O2GA7EPQ6EREHPUGTKU7VEUD30R6LLDA> .
 
-<http://example.com/789> a <https://epimorphics.com/datasets/testds/def/classes/registration> ;
+<http://example.com/789> a ns1:registration ;
     ns1:prop <https://epimorphics.com/datasets/testds/def/scheme1/LQOLIG61J9UEV7BN9JOF36NUSRGICPDM> .
 
 ns1:prop a rdf:Property ;
@@ -307,7 +307,7 @@ ns1:prop a rdf:Property ;
     skos:prefLabel "label2" ;
     skos:topConceptOf ns1:scheme1_scheme .
 
-<https://epimorphics.com/datasets/testds/def/classes/registration> a owl:Class ;
+ns1:registration a owl:Class ;
     rdfs:label "registration" .
 
 <https://epimorphics.com/datasets/testds/def/scheme1/LQOLIG61J9UEV7BN9JOF36NUSRGICPDM> a skos:Concept ;
@@ -344,14 +344,14 @@ ns1:scheme1_scheme a skos:ConceptScheme ;
 @prefix rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#> .
 @prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#> .
 
-<http://example.com/123> a <https://epimorphics.com/datasets/testds/def/classes/registration> ;
+<http://example.com/123> a ns1:registration ;
     ns1:prop <http://example.com/value/foo>,
         "bar" .
 
 ns1:prop a rdf:Property ;
     rdfs:label "prop" .
 
-<https://epimorphics.com/datasets/testds/def/classes/registration> a owl:Class ;
+ns1:registration a owl:Class ;
     rdfs:label "registration" .
 
 """
@@ -381,8 +381,8 @@ ns1:prop a rdf:Property ;
 @prefix rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#> .
 @prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#> .
 
-<http://example.com/123> a <https://epimorphics.com/datasets/testds/def/classes/registration> ;
-    ns1:prop [ a <https://epimorphics.com/datasets/testds/def/classes/nested> ;
+<http://example.com/123> a ns1:registration ;
+    ns1:prop [ a ns1:nested ;
             ns1:val "foo" ] .
 
 ns1:prop a rdf:Property ;
@@ -391,10 +391,10 @@ ns1:prop a rdf:Property ;
 ns1:val a rdf:Property ;
     rdfs:label "val" .
 
-<https://epimorphics.com/datasets/testds/def/classes/nested> a owl:Class ;
+ns1:nested a owl:Class ;
     rdfs:label "nested" .
 
-<https://epimorphics.com/datasets/testds/def/classes/registration> a owl:Class ;
+ns1:registration a owl:Class ;
     rdfs:label "registration" .
 
 """

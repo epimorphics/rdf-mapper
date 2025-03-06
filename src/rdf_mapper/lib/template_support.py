@@ -240,7 +240,7 @@ def process_resource_spec(name: str, rs: ResourceSpec, state: TemplateState) -> 
     # Use an assigned type or default
     type_template = rs.find_prop_defn("@type")
     if not type_template:
-        type_template = "<{$datasetBase}/def/classes/{$resourceID}>"
+        type_template = "<{$datasetBase}/def/{$resourceID}>"
         _id = uri_expand(type_template, namespaces, state)
         _record_implicit_class(name, _id, rs.spec.get("comment"), state)
         type_uri = URIRef(_id)
