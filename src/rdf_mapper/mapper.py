@@ -65,6 +65,9 @@ def _init_logging() -> None:
     logger.addHandler(h1)
     logger.addHandler(h2)
 
-if __name__ == "__main__":
+def run_main() -> None:
     _init_logging()
     main()
+
+if __name__ == "__main__":
+    run_main()

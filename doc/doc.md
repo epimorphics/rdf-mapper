@@ -60,7 +60,7 @@ To process any dataset we need one piece of configuration information - a short 
 
 This example resource definition means that each row of the source data will generate a resource of type `def:HSERegistration` with two properties, derived from the columns `Product Name:` and `MAPP (Reg.) Number:`. The punctuation like the trailing `:` is part of the source data and will be removed in generated the RDF property name to ensure we have a legal name. The output will also include a minimal class definition for `def:HSERegistration` and for the two properties. The resources themselves will be generated in a `data:` namespace. The `def:` and `data:` namespaces default to be relative to a dataset namespace which in turn uses the `$datasetID` combined with a default global base namespace.
 
-A template can include multiple resource definitions of a row of data represents multiple (linked) entities.
+A template can include multiple resource definitions so a row of data can generate multiple (linked) entities.
 
 ## Resource definitions
 
@@ -74,6 +74,8 @@ Resource definitions can have the following fields:
 | `properties` | List of property/value templates defining the properties to attach to the generated resource |
 
 Entries in `one_offs` are identical to `resources` definitions, the difference is in their application, one offs are only generated once for the run and are a way to create static resources that the rows can refer to. 
+
+When the property/value definitions are processed then missing variables referenced in the template will cause that property to be skipped but will not abort the resource or the whole role. In this way templates can safely refer to optional values in the source data. Use the `requires` guard noted above if the entire resources _should_ be skipped if some source values are missing. When property values or resources are skipped this fact is recorded in the `mapping.log` file (or standard error if logging has not been configured) to help with debugging unexpectedly missing values.
 
 ## Patterns
 

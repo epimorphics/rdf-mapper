@@ -40,6 +40,24 @@ class TestTemplateProcessor(unittest.TestCase):
             }),
             [self.row1], "explicit_mapping.ttl")
 
+    def test_skip_missing(self) -> None:
+        self.do_test(
+             MapperSpec({
+                "globals": {"$datasetID": "testds"},
+                "namespaces" : { "def" : "https://epimorphics.com/library/def/" },
+                "resources" : [{
+                    "name": "registration",
+                    "properties": {
+                        "@id" : "<http://example.com/{$row}>",
+                        "@type" : "<skos:Concept>",
+                        "<def:p>" : "{id | asInt}",
+                        "<def:missing>" : "{missing}",
+                        "<def:missing2>" : "{missing}@en"
+                    }
+                }]
+            }),
+            [self.row1], "skip_missing.ttl")
+
     def test_inverse_prop(self) -> None:
         self.do_test(
              MapperSpec({
@@ -185,7 +203,9 @@ class TestTemplateProcessor(unittest.TestCase):
         output = StringIO("")
         proc = TemplateProcessor(spec, "test", output)
         for row in rows:
-            result = proc.process_row(row).serialize(format='turtle')
+            proc.process_row(row)
+        proc.bind_namespaces()
+        result = proc.graph.serialize(format='turtle')
         if not expected:
             print(result)
         self.assertEqual(load_expected(expected), result)

@@ -1,38 +1,38 @@
-@prefix dcterms: <http://purl.org/dc/terms/> .
-@prefix ns1: <https://epimorphics.com/datasets/testds/def/> .
+@prefix dct: <http://purl.org/dc/terms/> .
+@prefix def: <https://epimorphics.com/datasets/testds/def/> .
 @prefix owl: <http://www.w3.org/2002/07/owl#> .
 @prefix rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#> .
 @prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#> .
 @prefix skos: <http://www.w3.org/2004/02/skos/core#> .
 
-<http://example.com/123> a ns1:registration ;
-    ns1:prop <https://epimorphics.com/datasets/testds/def/scheme1/LQOLIG61J9UEV7BN9JOF36NUSRGICPDM> .
+<http://example.com/123> a def:registration ;
+    def:prop <https://epimorphics.com/datasets/testds/def/scheme1/LQOLIG61J9UEV7BN9JOF36NUSRGICPDM> .
 
-<http://example.com/456> a ns1:registration ;
-    ns1:prop <https://epimorphics.com/datasets/testds/def/scheme1/O2GA7EPQ6EREHPUGTKU7VEUD30R6LLDA> .
+<http://example.com/456> a def:registration ;
+    def:prop <https://epimorphics.com/datasets/testds/def/scheme1/O2GA7EPQ6EREHPUGTKU7VEUD30R6LLDA> .
 
-<http://example.com/789> a ns1:registration ;
-    ns1:prop <https://epimorphics.com/datasets/testds/def/scheme1/LQOLIG61J9UEV7BN9JOF36NUSRGICPDM> .
+<http://example.com/789> a def:registration ;
+    def:prop <https://epimorphics.com/datasets/testds/def/scheme1/LQOLIG61J9UEV7BN9JOF36NUSRGICPDM> .
 
-ns1:prop a rdf:Property ;
+def:prop a rdf:Property ;
     rdfs:label "prop" .
 
 <https://epimorphics.com/datasets/testds/def/scheme1/O2GA7EPQ6EREHPUGTKU7VEUD30R6LLDA> a skos:Concept ;
-    skos:inScheme ns1:scheme1_scheme ;
+    skos:inScheme def:scheme1_scheme ;
     skos:prefLabel "label2" ;
-    skos:topConceptOf ns1:scheme1_scheme .
+    skos:topConceptOf def:scheme1_scheme .
 
-ns1:registration a owl:Class ;
+def:registration a owl:Class ;
     rdfs:label "registration" .
 
 <https://epimorphics.com/datasets/testds/def/scheme1/LQOLIG61J9UEV7BN9JOF36NUSRGICPDM> a skos:Concept ;
-    skos:inScheme ns1:scheme1_scheme ;
+    skos:inScheme def:scheme1_scheme ;
     skos:prefLabel "label1" ;
-    skos:topConceptOf ns1:scheme1_scheme .
+    skos:topConceptOf def:scheme1_scheme .
 
-ns1:scheme1_scheme a skos:ConceptScheme ;
-    dcterms:description "Automatically generated concept scheme scheme1" ;
-    dcterms:title "scheme1" ;
+def:scheme1_scheme a skos:ConceptScheme ;
+    dct:description "Automatically generated concept scheme scheme1" ;
+    dct:title "scheme1" ;
     skos:hasTopConcept <https://epimorphics.com/datasets/testds/def/scheme1/LQOLIG61J9UEV7BN9JOF36NUSRGICPDM>,
         <https://epimorphics.com/datasets/testds/def/scheme1/O2GA7EPQ6EREHPUGTKU7VEUD30R6LLDA> .
 

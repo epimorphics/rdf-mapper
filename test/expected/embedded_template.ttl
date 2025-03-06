@@ -1,31 +1,31 @@
-@prefix ns1: <https://epimorphics.com/datasets/testds/def/> .
+@prefix def: <https://epimorphics.com/datasets/testds/def/> .
 @prefix owl: <http://www.w3.org/2002/07/owl#> .
 @prefix rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#> .
 @prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#> .
 
-<https://epimorphics.com/datasets/testds/data/registration/file-1> a ns1:registration ;
-    ns1:crop-link <https://epimorphics.com/datasets/testds/data/registration/file-1/crop-situation/0> ;
-    ns1:regNo "123" .
+<https://epimorphics.com/datasets/testds/data/registration/file-1> a def:registration ;
+    def:crop-link <https://epimorphics.com/datasets/testds/data/registration/file-1/crop-situation/0> ;
+    def:regNo "123" .
 
-ns1:crop a rdf:Property ;
+def:crop a rdf:Property ;
     rdfs:label "crop" .
 
-ns1:crop-link a rdf:Property ;
+def:crop-link a rdf:Property ;
     rdfs:label "crop-link" .
 
-ns1:qualifier a rdf:Property ;
+def:qualifier a rdf:Property ;
     rdfs:label "qualifier" .
 
-ns1:regNo a rdf:Property ;
+def:regNo a rdf:Property ;
     rdfs:label "regNo" .
 
-<https://epimorphics.com/datasets/testds/data/registration/file-1/crop-situation/0> a ns1:crop-situation ;
-    ns1:crop "barley" ;
-    ns1:qualifier "winter" .
+<https://epimorphics.com/datasets/testds/data/registration/file-1/crop-situation/0> a def:crop-situation ;
+    def:crop "barley" ;
+    def:qualifier "winter" .
 
-ns1:crop-situation a owl:Class ;
+def:crop-situation a owl:Class ;
     rdfs:label "crop-situation" .
 
-ns1:registration a owl:Class ;
+def:registration a owl:Class ;
     rdfs:label "registration" .
 

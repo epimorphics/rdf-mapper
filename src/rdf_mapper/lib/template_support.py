@@ -76,6 +76,8 @@ def valueof_var(var: str, state: TemplateState) -> Any:
                 val = fn(val, state)
         else:
             raise ValueError(f"Could not find function {fnname}")
+    if not val:
+        raise ValueError(f"could not find value for '{varname}'")
     return val
 
 _POOR_URI_CHARS = re.compile(r"[^\w\-]+")
@@ -227,6 +229,7 @@ def process_resource_spec(name: str, rs: ResourceSpec, state: TemplateState) -> 
             elif not value:
                 logging.warning(f"Skipping resource {rs.name} on row {state.get('$row')} because value for {key} is empty.")
                 return None
+
     # If we have no URI assignment default to the row pattern
     id_template = rs.find_prop_defn("@id") or "<row>"
     if id_template == "<_>":
@@ -247,25 +250,32 @@ def process_resource_spec(name: str, rs: ResourceSpec, state: TemplateState) -> 
     else:
         type_uri = URIRef(uri_expand(type_template, namespaces, state))
     state.graph.add((resource, RDF.type, type_uri))
+
+    # Process the properties
     for (prop, template) in rs.properties:
         try:
             process_property_value(resource, prop, template, state)
         except ValueError as ex:
-            logging.error(f"Skipping {prop} on row {state.get('$row')} due to exception {ex}")
+            logging.error(f"Skipping {prop} on row {state.get('$row')} because {ex}")
     return resource
 
 def process_property_value(resource: IdentifiedNode, prop: str, template: Any, state: TemplateState) -> None:
     """Process a single property expansion."""
     if prop == "@id" or prop == "@type":
         return   # already processed
+
     if isinstance(template, list):
         # Multiple expansions defined for this property
         for template_item in template:
             process_property_value(resource, prop, template_item, state)
         return
+
+    # Check for inverse property
     inverse = prop.startswith("^")
     if inverse:
         prop = prop[1:]
+
+    # Check for use of property specifications in the template or imports
     namespaces = state.spec.namespaces
     prop_spec: PropSpec | None = None
     if prop.startswith(":"):
@@ -277,20 +287,17 @@ def process_property_value(resource: IdentifiedNode, prop: str, template: Any, s
                 state.graph.add((resource, RDF.type, class_ref))
         else:
             raise ValueError(f"could not find property specification {prop}")
+
     propref = URIRef(uri_expand(prop, namespaces, state))
     propname = prop
     if prop_spec:
         _record_implicit_prop(prop_spec.name,  str(propref), prop_spec.spec.get("comment"), state)
         propname = prop_spec.name
+
     if isinstance(template, str):
         if template == "":
             template = "{" + prop + "}"
-        try:
-            value = value_expand(template, namespaces, state.child({"$prop": propname}))
-        except ValueError as err:
-            # Skip lines with no value to lookup,
-            logging.warning(f"Skipping property due to {err}")
-            value = None
+        value = value_expand(template, namespaces, state.child({"$prop": propname}))
     elif isinstance(template, dict):
         rs = ResourceSpec(template)
         if not rs.name:
@@ -298,6 +305,7 @@ def process_property_value(resource: IdentifiedNode, prop: str, template: Any, s
         value = process_resource_spec(rs.name, rs, state)
     else:
         raise NotImplementedError("Implement inline property specs")
+
     if isinstance(value, list):
         for v in value:
             state.graph.add((resource, propref, v))

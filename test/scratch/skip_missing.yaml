@@ -1,0 +1,14 @@
+globals:
+  "$datasetID": "testds"
+
+namespaces:
+  def: "https://epimorphics.com/library/def/"
+  
+resources:
+  - name: registration
+    properties:
+      "@id" : "<http://example.com/{$row}>"
+      "@type" : "<skos:Concept>"
+      "<def:p>" : "{id | asInt}"
+      "<def:missing>" : "{missing}"
+      "<def:missing2>" : "{missing}@en"

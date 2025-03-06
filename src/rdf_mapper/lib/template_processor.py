@@ -45,10 +45,13 @@ class TemplateProcessor:
             logging.error(f"Failure on row {self.row} with {err}")
         return self.graph
 
-    def finalize(self) -> None:
-        logging.info(f"Processed {self.row} lines")
+    def bind_namespaces(self) -> None:
         for ns, uri in self.spec.namespaces.items():
             self.graph.bind(ns, uri)
-        self.graph.bind("def", f"{self.spec.context['$datasetBase']}/def/")
+        self.graph.bind("def", f"{self.spec.context['$datasetBase']}/def/", override=False)
+
+    def finalize(self) -> None:
+        logging.info(f"Processed {self.row} lines")
+        self.bind_namespaces()
         self.output.write(self.graph.serialize(format='turtle'))
         self.output.close()

@@ -1,17 +1,18 @@
-@prefix ns1: <https://epimorphics.com/library/def/> .
+@prefix aglib: <https://epimorphics.com/library/def/> .
+@prefix def: <https://epimorphics.com/datasets/testds/def/> .
 @prefix owl: <http://www.w3.org/2002/07/owl#> .
 @prefix rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#> .
 @prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#> .
 @prefix xsd: <http://www.w3.org/2001/XMLSchema#> .
 
-<https://epimorphics.com/datasets/testds/data/registration/file-1> a <https://epimorphics.com/datasets/testds/def/registration>,
-        ns1:Reg ;
-    ns1:RegNo 123 .
+<https://epimorphics.com/datasets/testds/data/registration/file-1> a def:registration,
+        aglib:Reg ;
+    aglib:RegNo 123 .
 
-ns1:RegNo a rdf:Property ;
+aglib:RegNo a rdf:Property ;
     rdfs:label "regNo" ;
     rdfs:comment "identifier for registration" .
 
-<https://epimorphics.com/datasets/testds/def/registration> a owl:Class ;
+def:registration a owl:Class ;
     rdfs:label "registration" .
 
