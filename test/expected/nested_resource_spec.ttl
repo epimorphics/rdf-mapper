@@ -1,0 +1,21 @@
+@prefix ns1: <https://epimorphics.com/datasets/testds/def/> .
+@prefix owl: <http://www.w3.org/2002/07/owl#> .
+@prefix rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#> .
+@prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#> .
+
+<http://example.com/123> a ns1:registration ;
+    ns1:prop [ a ns1:nested ;
+            ns1:val "foo" ] .
+
+ns1:prop a rdf:Property ;
+    rdfs:label "prop" .
+
+ns1:val a rdf:Property ;
+    rdfs:label "val" .
+
+ns1:nested a owl:Class ;
+    rdfs:label "nested" .
+
+ns1:registration a owl:Class ;
+    rdfs:label "registration" .
+

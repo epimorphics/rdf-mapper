@@ -1,0 +1,6 @@
+@prefix org: <http://www.w3.org/ns/org#> .
+@prefix skos: <http://www.w3.org/2004/02/skos/core#> .
+
+<https://epimorphics.com/datasets/testds/data/HSE/HSE> a org:Organization ;
+    skos:prefLabel "Health and Safety Executive"@en .
+

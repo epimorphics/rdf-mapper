@@ -23,23 +23,7 @@ class TestTemplateProcessor(unittest.TestCase):
                     ]
                 }]
             }),
-            [self.row1],
-            """@prefix ns1: <https://epimorphics.com/datasets/testds/def/> .
-@prefix owl: <http://www.w3.org/2002/07/owl#> .
-@prefix rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#> .
-@prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#> .
-
-<https://epimorphics.com/datasets/testds/data/registration/file-1> a ns1:registration ;
-    ns1:id "123" .
-
-ns1:id a rdf:Property ;
-    rdfs:label "id" .
-
-ns1:registration a owl:Class ;
-    rdfs:label "registration" .
-
-"""  # noqa: E501
-            )
+            [self.row1], "default_mapping.ttl")
 
     def test_explicit_mapping(self) -> None:
         self.do_test(
@@ -54,20 +38,7 @@ ns1:registration a owl:Class ;
                     }
                 }]
             }),
-            [self.row1],
-            """@prefix ns1: <https://epimorphics.com/datasets/testds/def/> .
-@prefix rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#> .
-@prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#> .
-@prefix skos: <http://www.w3.org/2004/02/skos/core#> .
-@prefix xsd: <http://www.w3.org/2001/XMLSchema#> .
-
-<http://example.com/1> a skos:Concept ;
-    ns1:p 123 .
-
-ns1:p a rdf:Property ;
-    rdfs:label "p" .
-
-""")
+            [self.row1], "explicit_mapping.ttl")
 
     def test_inverse_prop(self) -> None:
         self.do_test(
@@ -83,22 +54,7 @@ ns1:p a rdf:Property ;
                     }
                 }]
             }),
-            [self.row1],
-            """@prefix ns1: <https://epimorphics.com/datasets/testds/def/> .
-@prefix rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#> .
-@prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#> .
-@prefix skos: <http://www.w3.org/2004/02/skos/core#> .
-@prefix xsd: <http://www.w3.org/2001/XMLSchema#> .
-
-<http://example.com/collection> skos:member <http://example.com/1> .
-
-ns1:p a rdf:Property ;
-    rdfs:label "p" .
-
-<http://example.com/1> a skos:Concept ;
-    ns1:p 123 .
-
-""")
+            [self.row1], "inverse_prop.ttl")
 
     def test_property_spec(self) -> None:
         self.do_test(
@@ -119,25 +75,7 @@ ns1:p a rdf:Property ;
                     }
                 }]
             }),
-            [self.row1],
-            """@prefix ns1: <https://epimorphics.com/library/def/> .
-@prefix owl: <http://www.w3.org/2002/07/owl#> .
-@prefix rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#> .
-@prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#> .
-@prefix xsd: <http://www.w3.org/2001/XMLSchema#> .
-
-<https://epimorphics.com/datasets/testds/data/registration/file-1> a <https://epimorphics.com/datasets/testds/def/registration>,
-        ns1:Reg ;
-    ns1:RegNo 123 .
-
-ns1:RegNo a rdf:Property ;
-    rdfs:label "regNo" ;
-    rdfs:comment "identifier for registration" .
-
-<https://epimorphics.com/datasets/testds/def/registration> a owl:Class ;
-    rdfs:label "registration" .
-
-""")
+            [self.row1],"property_spec.ttl")
 
     def test_embedded_template(self) -> None:
         self.do_test(
@@ -160,40 +98,7 @@ ns1:RegNo a rdf:Property ;
                     }
                 }]
             }),
-            [self.row1],
-            """@prefix ns1: <https://epimorphics.com/datasets/testds/def/> .
-@prefix owl: <http://www.w3.org/2002/07/owl#> .
-@prefix rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#> .
-@prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#> .
-
-<https://epimorphics.com/datasets/testds/data/registration/file-1> a ns1:registration ;
-    ns1:crop-link <https://epimorphics.com/datasets/testds/data/registration/file-1/crop-situation/0> ;
-    ns1:regNo "123" .
-
-ns1:crop a rdf:Property ;
-    rdfs:label "crop" .
-
-ns1:crop-link a rdf:Property ;
-    rdfs:label "crop-link" .
-
-ns1:qualifier a rdf:Property ;
-    rdfs:label "qualifier" .
-
-ns1:regNo a rdf:Property ;
-    rdfs:label "regNo" .
-
-<https://epimorphics.com/datasets/testds/data/registration/file-1/crop-situation/0> a ns1:crop-situation ;
-    ns1:crop "barley" ;
-    ns1:qualifier "winter" .
-
-ns1:crop-situation a owl:Class ;
-    rdfs:label "crop-situation" .
-
-ns1:registration a owl:Class ;
-    rdfs:label "registration" .
-
-"""  # noqa: E501
-            )
+            [self.row1], "embedded_template.ttl")
 
     def test_one_off(self) -> None:
         self.do_test(
@@ -208,14 +113,7 @@ ns1:registration a owl:Class ;
                     }
                 }]
             }),
-            [self.row1],
-            """@prefix org: <http://www.w3.org/ns/org#> .
-@prefix skos: <http://www.w3.org/2004/02/skos/core#> .
-
-<https://epimorphics.com/datasets/testds/data/HSE/HSE> a org:Organization ;
-    skos:prefLabel "Health and Safety Executive"@en .
-
-""")
+            [self.row1], "one_off.ttl")
 
     def test_auto_cv(self) -> None:
         self.do_test(
@@ -229,46 +127,7 @@ ns1:registration a owl:Class ;
                     }
                 }]
             }),
-            [self.row1, self.row2, self.row3],
-            """@prefix dcterms: <http://purl.org/dc/terms/> .
-@prefix ns1: <https://epimorphics.com/datasets/testds/def/> .
-@prefix owl: <http://www.w3.org/2002/07/owl#> .
-@prefix rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#> .
-@prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#> .
-@prefix skos: <http://www.w3.org/2004/02/skos/core#> .
-
-<http://example.com/123> a ns1:registration ;
-    ns1:prop <https://epimorphics.com/datasets/testds/def/scheme1/label1> .
-
-<http://example.com/456> a ns1:registration ;
-    ns1:prop <https://epimorphics.com/datasets/testds/def/scheme1/label2> .
-
-<http://example.com/789> a ns1:registration ;
-    ns1:prop <https://epimorphics.com/datasets/testds/def/scheme1/label1> .
-
-ns1:prop a rdf:Property ;
-    rdfs:label "prop" .
-
-<https://epimorphics.com/datasets/testds/def/scheme1/label2> a skos:Concept ;
-    skos:inScheme ns1:scheme1_scheme ;
-    skos:prefLabel "label2" ;
-    skos:topConceptOf ns1:scheme1_scheme .
-
-ns1:registration a owl:Class ;
-    rdfs:label "registration" .
-
-<https://epimorphics.com/datasets/testds/def/scheme1/label1> a skos:Concept ;
-    skos:inScheme ns1:scheme1_scheme ;
-    skos:prefLabel "label1" ;
-    skos:topConceptOf ns1:scheme1_scheme .
-
-ns1:scheme1_scheme a skos:ConceptScheme ;
-    dcterms:description "Automatically generated concept scheme scheme1" ;
-    dcterms:title "scheme1" ;
-    skos:hasTopConcept <https://epimorphics.com/datasets/testds/def/scheme1/label1>,
-        <https://epimorphics.com/datasets/testds/def/scheme1/label2> .
-
-""")
+            [self.row1, self.row2, self.row3], "auto_cv.ttl")
 
     def test_auto_cv_hash(self) -> None:
         self.do_test(
@@ -282,46 +141,7 @@ ns1:scheme1_scheme a skos:ConceptScheme ;
                     }
                 }]
             }),
-            [self.row1, self.row2, self.row3],
-            """@prefix dcterms: <http://purl.org/dc/terms/> .
-@prefix ns1: <https://epimorphics.com/datasets/testds/def/> .
-@prefix owl: <http://www.w3.org/2002/07/owl#> .
-@prefix rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#> .
-@prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#> .
-@prefix skos: <http://www.w3.org/2004/02/skos/core#> .
-
-<http://example.com/123> a ns1:registration ;
-    ns1:prop <https://epimorphics.com/datasets/testds/def/scheme1/LQOLIG61J9UEV7BN9JOF36NUSRGICPDM> .
-
-<http://example.com/456> a ns1:registration ;
-    ns1:prop <https://epimorphics.com/datasets/testds/def/scheme1/O2GA7EPQ6EREHPUGTKU7VEUD30R6LLDA> .
-
-<http://example.com/789> a ns1:registration ;
-    ns1:prop <https://epimorphics.com/datasets/testds/def/scheme1/LQOLIG61J9UEV7BN9JOF36NUSRGICPDM> .
-
-ns1:prop a rdf:Property ;
-    rdfs:label "prop" .
-
-<https://epimorphics.com/datasets/testds/def/scheme1/O2GA7EPQ6EREHPUGTKU7VEUD30R6LLDA> a skos:Concept ;
-    skos:inScheme ns1:scheme1_scheme ;
-    skos:prefLabel "label2" ;
-    skos:topConceptOf ns1:scheme1_scheme .
-
-ns1:registration a owl:Class ;
-    rdfs:label "registration" .
-
-<https://epimorphics.com/datasets/testds/def/scheme1/LQOLIG61J9UEV7BN9JOF36NUSRGICPDM> a skos:Concept ;
-    skos:inScheme ns1:scheme1_scheme ;
-    skos:prefLabel "label1" ;
-    skos:topConceptOf ns1:scheme1_scheme .
-
-ns1:scheme1_scheme a skos:ConceptScheme ;
-    dcterms:description "Automatically generated concept scheme scheme1" ;
-    dcterms:title "scheme1" ;
-    skos:hasTopConcept <https://epimorphics.com/datasets/testds/def/scheme1/LQOLIG61J9UEV7BN9JOF36NUSRGICPDM>,
-        <https://epimorphics.com/datasets/testds/def/scheme1/O2GA7EPQ6EREHPUGTKU7VEUD30R6LLDA> .
-
-""")
+            [self.row1, self.row2, self.row3], "auto_cv_hash.ttl")
 
     def test_property_value_list(self) -> None:
         self.do_test(
@@ -338,24 +158,7 @@ ns1:scheme1_scheme a skos:ConceptScheme ;
                     }
                 }]
             }),
-            [self.row1],
-            """@prefix ns1: <https://epimorphics.com/datasets/testds/def/> .
-@prefix owl: <http://www.w3.org/2002/07/owl#> .
-@prefix rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#> .
-@prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#> .
-
-<http://example.com/123> a ns1:registration ;
-    ns1:prop <http://example.com/value/foo>,
-        "bar" .
-
-ns1:prop a rdf:Property ;
-    rdfs:label "prop" .
-
-ns1:registration a owl:Class ;
-    rdfs:label "registration" .
-
-"""
-        )
+            [self.row1], "property_value_list.ttl")
 
     def test_nested_resource_spec(self) -> None:
         self.do_test(
@@ -375,30 +178,8 @@ ns1:registration a owl:Class ;
                     }
                 }]
             }),
-            [self.row1],
-            """@prefix ns1: <https://epimorphics.com/datasets/testds/def/> .
-@prefix owl: <http://www.w3.org/2002/07/owl#> .
-@prefix rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#> .
-@prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#> .
+            [self.row1], "nested_resource_spec.ttl")
 
-<http://example.com/123> a ns1:registration ;
-    ns1:prop [ a ns1:nested ;
-            ns1:val "foo" ] .
-
-ns1:prop a rdf:Property ;
-    rdfs:label "prop" .
-
-ns1:val a rdf:Property ;
-    rdfs:label "val" .
-
-ns1:nested a owl:Class ;
-    rdfs:label "nested" .
-
-ns1:registration a owl:Class ;
-    rdfs:label "registration" .
-
-"""
-        )
     def do_test(self, spec: MapperSpec, rows: list, expected: str) -> None:
         self.maxDiff = 5000
         output = StringIO("")
@@ -407,7 +188,11 @@ ns1:registration a owl:Class ;
             result = proc.process_row(row).serialize(format='turtle')
         if not expected:
             print(result)
-        self.assertEqual(expected, result)
+        self.assertEqual(load_expected(expected), result)
+
+def load_expected(name: str) -> str:
+    with open(f"test/expected/{name}", 'r', encoding='utf-8') as file:
+        return file.read()
 
 if __name__ == '__main__':
     unittest.main()
