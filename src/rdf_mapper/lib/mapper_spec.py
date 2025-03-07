@@ -29,8 +29,9 @@ class MapperSpec:
         "org": "http://www.w3.org/ns/org#",
     }
 
-    def __init__(self, spec: dict = {}) -> None:
+    def __init__(self, spec: dict = {}, auto_declare: bool = True) -> None:
         self.spec = spec
+        self.auto_declare = auto_declare
         self.globals = self._getAsDict("globals")
         self.context: ChainMap[str, Any] = ChainMap(self.globals, self.builtins)
         self.namespaces = ChainMap(self._getAsDict("namespaces"), self.builtinNamespaces)

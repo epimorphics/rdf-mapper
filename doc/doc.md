@@ -8,16 +8,19 @@ Maps are expressed in (largely) declarative yaml and the mapper tool will proces
 
 Operation:
 ```
-    ./mapper.py template input [output]
+    ./mapper.py [--auto-declare] template input [output]
 ```
 
 If no output file is specified the transformed data will be written to stdout.
+
+Non-fatal warnings will be logging to stderr and to `mapper.log`.
 
 Key features: 
 
 * builtin default patterns (URIs etc) to simplify the mapping process for normal use and enforce standard practice, while allowing for URI and value templating for experts
 * builtin pipeline operators for higher level transformations, including transformers such as "intelligent" date parse and normalisation, allowing common cases to be handled without programming or regular expression bashing
 * support for reconciliation to controlled vocabularies, with a builtin automatic pattern for handling reconciliation failures
+* optionally include declarations of classes and properties referenced in the template, and declare implicit type for created resources, this is now off by default
 * option to auto-create micro controlled vocabularies on the fly
 * ability to import import vocabulary modules so that mapping can refer to those terms, supporting a minimal approach to ontology reuse
 * ability to import processing modules when complex input parsing is required, allowing such coding tasks to be separated from the overall mapping definition

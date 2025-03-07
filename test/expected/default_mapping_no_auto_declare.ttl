@@ -1,0 +1,4 @@
+@prefix def: <https://epimorphics.com/datasets/testds/def/> .
+
+<https://epimorphics.com/datasets/testds/data/registration/file-1> def:id "123" .
+

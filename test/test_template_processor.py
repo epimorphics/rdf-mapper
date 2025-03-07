@@ -25,6 +25,19 @@ class TestTemplateProcessor(unittest.TestCase):
             }),
             [self.row1], "default_mapping.ttl")
 
+    def test_default_mapping_no_auto_declare(self) -> None:
+        self.do_test(
+             MapperSpec({
+                "globals": {"$datasetID": "testds"},
+                "resources" : [{
+                    "name": "registration",
+                    "properties": [
+                        {"id" : ""}
+                    ]
+                }]
+            }, auto_declare=False),
+            [self.row1], "default_mapping_no_auto_declare.ttl")
+
     def test_explicit_mapping(self) -> None:
         self.do_test(
              MapperSpec({
@@ -198,7 +211,7 @@ class TestTemplateProcessor(unittest.TestCase):
             }),
             [self.row1], "nested_resource_spec.ttl")
 
-    def do_test(self, spec: MapperSpec, rows: list, expected: str) -> None:
+    def do_test(self, spec: MapperSpec, rows: list, expected: str | None) -> None:
         self.maxDiff = 5000
         output = StringIO("")
         proc = TemplateProcessor(spec, "test", output)
@@ -208,7 +221,8 @@ class TestTemplateProcessor(unittest.TestCase):
         result = proc.graph.serialize(format='turtle')
         if not expected:
             print(result)
-        self.assertEqual(load_expected(expected), result)
+        else:
+            self.assertEqual(load_expected(expected), result)
 
 def load_expected(name: str) -> str:
     with open(f"test/expected/{name}", 'r', encoding='utf-8') as file:

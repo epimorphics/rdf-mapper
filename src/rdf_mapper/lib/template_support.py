@@ -155,7 +155,8 @@ def uri_expand(pattern: str, namespaces: Mapping[str,str], state: TemplateState)
     else:
         # Simple string, create as def in dataset namespace
         _id = f"{state.get('$datasetBase')}/def/{normalize(pattern)}"
-        _record_implicit_prop(pattern, _id, None, state)
+        if state.spec.auto_declare:
+            _record_implicit_prop(pattern, _id, None, state)
         return _id
 
 def _expand_curi(uriref: str, namespaces: Mapping[str,str]) -> str:
@@ -242,21 +243,24 @@ def process_resource_spec(name: str, rs: ResourceSpec, state: TemplateState) -> 
 
     # Use an assigned type or default
     type_template = rs.find_prop_defn("@type")
-    if not type_template:
+    if not type_template and state.spec.auto_declare:
         type_template = "<{$datasetBase}/def/{$resourceID}>"
         _id = uri_expand(type_template, namespaces, state)
         _record_implicit_class(name, _id, rs.spec.get("comment"), state)
         type_uri = URIRef(_id)
-    else:
+        state.graph.add((resource, RDF.type, type_uri))
+    elif type_template:
         type_uri = URIRef(uri_expand(type_template, namespaces, state))
-    state.graph.add((resource, RDF.type, type_uri))
+        state.graph.add((resource, RDF.type, type_uri))
 
     # Process the properties
     for (prop, template) in rs.properties:
         try:
             process_property_value(resource, prop, template, state)
         except ValueError as ex:
-            logging.error(f"Skipping {prop} on row {state.get('$row')} because {ex}")
+            if prop != "<rdfs:comment>":
+                # The rdfs:comment guard is a kludge to reduce noise when auto declaring properties and classes
+                logging.warning(f"Skipping {prop} on row {state.get('$row')} because {ex}")
     return resource
 
 def process_property_value(resource: IdentifiedNode, prop: str, template: Any, state: TemplateState) -> None:
@@ -291,7 +295,8 @@ def process_property_value(resource: IdentifiedNode, prop: str, template: Any, s
     propref = URIRef(uri_expand(prop, namespaces, state))
     propname = prop
     if prop_spec:
-        _record_implicit_prop(prop_spec.name,  str(propref), prop_spec.spec.get("comment"), state)
+        if state.spec.auto_declare:
+            _record_implicit_prop(prop_spec.name,  str(propref), prop_spec.spec.get("comment"), state)
         propname = prop_spec.name
 
     if isinstance(template, str):

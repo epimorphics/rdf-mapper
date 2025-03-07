@@ -4,6 +4,7 @@
 
 * declarative mapping spec (in yaml) for easy replay
 * built in default patterns (URIs etc) to simplify mapping process
+* option to automatically declare implicit vocabulary terms on the fly
 * built in pipeline operators for higher level transformations
 * reconciliation and auto-CV creation for handling reference data
 * can import vocabulary modules so mapping can refer to those terms
@@ -18,6 +19,7 @@
    * include namespace declarations in the generated ttl
    * make `asDate` treat a bare year as `yyyy-01-01`
    * add `expr()` transform to allow inline python expressions in value mappings
+   * suppress auto create of properties, classes and resource types unless `--auto-declare` is supplied - avoids need to always have explicit `@type`
 
 ## Dev set up
 

@@ -28,13 +28,19 @@ def process_csv(file:TextIO, processor:TemplateProcessor)  -> None:
 argparser = argparse.ArgumentParser(
     description='Transform and reconcile csv or jsonlines file based on a mapping template'
 )
-argparser.add_argument('template', nargs=1, type=argparse.FileType('r'))
-argparser.add_argument('datafile', nargs=1, type=argparse.FileType('r'))
-argparser.add_argument('outfile', nargs='?', type=argparse.FileType('w'), default=sys.stdout)
+argparser.add_argument('template', nargs=1, type=argparse.FileType('r'),
+                       help='Mapping template file')
+argparser.add_argument('datafile', nargs=1, type=argparse.FileType('r'),
+                       help='Data file')
+argparser.add_argument('outfile', nargs='?', type=argparse.FileType('w'), default=sys.stdout,
+                       help='Optional output file, defaults to stdout')
+argparser.add_argument('--auto-declare', action='store_true',
+                       help='Automatically declare new classes and properties')
 
 def main() -> None:
     args = argparser.parse_args()
     spec = load_template(args.template[0])
+    spec.auto_declare = args.auto_declare
     datafile = args.datafile[0]
 
     filename, extension = os.path.splitext(datafile.name)
