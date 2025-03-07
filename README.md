@@ -31,7 +31,8 @@ See [docs](./doc/doc.md)
    * include namespace declarations in the generated ttl
    * make `asDate` treat a bare year as `yyyy-01-01`
    * add `expr()` transform to allow inline python expressions in value mappings
-   * suppress auto create of properties, classes and resource types unless `--auto-declare` is supplied - avoids need to always have explicit `@type`
+   * suppress auto create of properties, classes and resource types unless `--auto-declare` is set - avoids need to always have explicit `@type`
+   * support for value mapping tables (could extend to support CSV-based maps if desired)
 
 ## Dev set up
 
