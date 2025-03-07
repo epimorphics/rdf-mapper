@@ -450,6 +450,26 @@ def map_to(data: dict, state: TemplateState, rsname: str) -> IdentifiedNode | No
         raise ValueError(f"map_to expecting data to be a dict but found {data}")
     return _create_resource(data, state, rs)
 
+def map_by(data: str, state: TemplateState, mapping_name: str) -> term.Identifier | None:
+    if not data:
+        return None
+    mapping = state.spec.mappings.get(mapping_name)
+    if not mapping:
+        raise ValueError(f"map_by could not find mapping called {mapping_name}")
+    if not isinstance(data, str):
+        raise ValueError(f"map_by expecting data to be a string but found {data}")
+    mapped = mapping.get(data)
+    if mapped is None:
+        raise ValueError(f"map_by could not find mapping for {data} in {mapping_name}")
+    value = value_expand(mapped, state.spec.namespaces, state)
+    if value is None:
+        raise ValueError(f"map_by could not complete mapping for {data} in {mapping_name}")
+    elif isinstance(value, list):
+        logging.warning(f"map_by mapping for {data} in {mapping_name} resulted in a list, only using first value")
+        return value[0]
+    else:
+        return value
+
 _PROXY_CONCEPT_SPEC = {
     "properties" : {
         "@id" : "<hash(key,keytype)>",

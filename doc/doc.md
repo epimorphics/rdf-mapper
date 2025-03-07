@@ -43,7 +43,7 @@ resources:
       "<skos:prefLabel>" : "{label}"
 ```
 
-This defines one shape and a resources of this shape will be created for each row of the data.
+This defines one shape and a resource of this shape will be created for each row of the data.
 
 The `@id` line gives an an explicit URI pattern for the created resources, which in this cases uses the row number in the source file to create unique URIs. 
 
@@ -75,11 +75,11 @@ A template can include multiple resource definitions so a row of data can genera
 
 ### Simple auto-declare template
 
-Examples like the above require the template developer to choose the URI pattern for generated resources and to know about namespaces for vocabularlies to use.
+Examples like the above require the template developer to choose the URI pattern for generated resources and to know about namespaces for vocabularies to use.
 
 To make it possible to create an initial mapping with a mininum of effort the `--auto-declare` option adds the facility to use default URI patterns and declare classes and properties for the data on the fly.
 
-The make this possible a minimal requirement is that the template should declare a short name for the dataset to be process. 
+The make this possible a minimal requirement is that the template should declare a short name for the dataset to be processed. 
 
 A minimum template example is:
 
@@ -180,7 +180,7 @@ Variables available for use in patterns include the fields (columns) each data r
 | Value | Description |
 |---|---|
 | `$baseURI` | base of URI for all data and definitions, defaults to `https://epimorphics.com/datasets/` |
-| `$datasetID` | short id string for this dataset, must be set in the template |
+| `$datasetID` | short id string for this dataset, must be set in the template if using `--auto-declare` |
 | `$file` | name of the file being ingested |
 | `$row` | row number of the line being ingested |
 | `$prop` | name of the current property being expanded |

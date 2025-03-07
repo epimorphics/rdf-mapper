@@ -38,6 +38,7 @@ class MapperSpec:
         self.one_offs = [ResourceSpec(spec) for spec in self._getAsList("one_offs")]
         self._init_defaults()
         self.resources = [ResourceSpec(spec) for spec in self._getAsList("resources")]
+        self.mappings = self._getAsDictOfDicts("mappings")
         self.embedded_resources = {}
         for e in self._getAsList("embedded"):
             rs = ResourceSpec(e)
@@ -90,6 +91,18 @@ class MapperSpec:
         if v is None:
             return {}
         elif type(v) is dict:
+            return v
+        else:
+            _error(f"Expected {field} to be a map/dict was {v}")
+
+    def _getAsDictOfDicts(self, field: str) -> dict[str, dict[str,str]]:
+        v = self.spec.get(field)
+        if v is None:
+            return {}
+        elif type(v) is dict:
+            for key, value in v.items():
+                if type(value) is not dict:
+                    _error(f"Expected {field} to be a map of maps/dicts was {v}")
             return v
         else:
             _error(f"Expected {field} to be a map/dict was {v}")

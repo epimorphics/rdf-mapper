@@ -211,6 +211,28 @@ class TestTemplateProcessor(unittest.TestCase):
             }),
             [self.row1], "nested_resource_spec.ttl")
 
+    def test_map_by(self) -> None:
+        self.do_test(
+            MapperSpec({
+                "mappings" : {
+                    "testmap" : {
+                        "foo" : "<http://example.com/Foo>",
+                        "bar" : "<http://example.com/Bar>",
+                        "baz" : "<http://example.com/Baz>"
+                    }
+                },
+                "resources": [{
+                    "name": "registration",
+                    "properties": {
+                        "@id": "<http://example.com/{id}>",
+                        "p": "{x | map_by('testmap')}",
+                        "q": "{y | map_by('testmap')}"
+                    }
+                }]
+            }, auto_declare=False),
+            [self.row1], "map_by.ttl" )
+
+
     def do_test(self, spec: MapperSpec, rows: list, expected: str | None) -> None:
         self.maxDiff = 5000
         output = StringIO("")
