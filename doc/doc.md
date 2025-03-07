@@ -13,7 +13,7 @@ Operation:
 
 If no output file is specified the transformed data will be written to stdout.
 
-Non-fatal warnings will be logging to stderr and to `mapper.log`.
+Non-fatal warnings will be logged to stderr and to `mapper.log`.
 
 Key features: 
 
@@ -62,6 +62,8 @@ resources:
 To process any dataset we need one piece of configuration information - a short identifier for the dataset. This is set by binding `$datasetID` in the first stanza. Variables use a convention of a `$` prefix for builtin or global configuration values.
 
 This example resource definition means that each row of the source data will generate a resource of type `def:HSERegistration` with two properties, derived from the columns `Product Name:` and `MAPP (Reg.) Number:`. The punctuation like the trailing `:` is part of the source data and will be removed in generated the RDF property name to ensure we have a legal name. The output will also include a minimal class definition for `def:HSERegistration` and for the two properties. The resources themselves will be generated in a `data:` namespace. The `def:` and `data:` namespaces default to be relative to a dataset namespace which in turn uses the `$datasetID` combined with a default global base namespace.
+
+The implicit type assignment and the generated `def:` entries for the properties and classes will only be generated when `--auto-declare` is set. This is now off by default to reduce the generation of unexpected declarations.
 
 A template can include multiple resource definitions so a row of data can generate multiple (linked) entities.
 

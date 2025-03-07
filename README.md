@@ -10,6 +10,18 @@
 * can import vocabulary modules so mapping can refer to those terms
 * can import processing modules for custom parsing or transformations
 
+## usage
+
+    mapper [--auto-declare] template input [output]
+
+Generates a `mapper.log` with record of actions and warnings, warnings also flagged to stderr.
+
+See ./examples/hse/templates for example mapping templates (note that templates 6 and 7 there require a reconciliation service running).
+
+## Documentation
+
+See [docs](./doc/doc.md)
+
 ## Changes
 
 ### Version 0.2.0
@@ -42,16 +54,3 @@ Check for package updates:
 
     pip install pip-tools
     pip-compile --upgrade pyproject.toml
-
-## usage
-
-    mapper template input [output]
-
-Generates a `mapper.log` with record of actions and errors, errors also flagged to stderr.
-
-See ./examples/hse/templates for example mapping templates (note that templates 6 and 7 there require a reconciliation service running).
-
-## Documentation
-
-See [docs](./doc/doc.md)
-
