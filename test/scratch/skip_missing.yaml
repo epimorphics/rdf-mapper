@@ -1,5 +1,5 @@
-globals:
-  "$datasetID": "testds"
+#globals:
+#  "$datasetID": "testds"
 
 namespaces:
   def: "https://epimorphics.com/library/def/"
