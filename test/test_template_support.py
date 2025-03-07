@@ -143,5 +143,11 @@ class TestTemplateSupport(unittest.TestCase):
         self.assertEqual(value_expand("{ val | map_by('map2')}", spec.namespaces, state), URIRef("http://example.com/foo"))
         self.assertEqual(value_expand("{ val | map_by('map3')}", spec.namespaces, state), Literal("foobar", lang="en"))
 
+    def test_casing(self) -> None:
+        spec = MapperSpec({"globals": {"$datasetID": "testds"}})
+        state = TemplateState(spec.context.new_child({"val": "Foo"}), Graph(), spec)
+        self.assertEqual(value_expand("{ val | toUpper}", spec.namespaces, state), Literal("FOO"))
+        self.assertEqual(value_expand("{ val | toLower}", spec.namespaces, state), Literal("foo"))
+
 if __name__ == '__main__':
     unittest.main()

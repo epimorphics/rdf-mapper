@@ -417,8 +417,14 @@ def asBoolean(s: str, state: TemplateState | None = None, *args) -> Literal:
         return Literal(s.lower() in [a.lower() for a in args], datatype=XSD.boolean)
     return Literal(s.lower() in ["yes", "true", "ok", "1"], datatype=XSD.boolean)
 
-def trim(s: str, state: TemplateState | None = None) -> str:
-    return s.strip()
+def trim(s: str, state: TemplateState | None = None) -> str | None:
+    return s.strip() if s else None
+
+def toLower(s: str, state: TemplateState | None = None) -> str | None:
+    return s.lower() if s else None
+
+def toUpper(s: str, state: TemplateState | None = None) -> str | None:
+    return s.upper() if s else None
 
 def splitComma(s: str, state: TemplateState | None = None) -> list:
     return _COMMA_SPLIT.split(s)
