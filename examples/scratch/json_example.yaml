@@ -1,0 +1,15 @@
+embedded:
+  - name: ProductDescription
+    properties:
+      "@id": "<_>"
+      width: "{width}"
+      height: "{height}"
+      weight: "{weight}"
+
+resources:
+  - name: Product
+    properties:
+      "@id": "<http://example.com/products/{$row}>"
+      "@type": "<http://example.com/Product>"
+      "name": "{name}"
+      "description": "{description | map_to('ProductDescription')}"

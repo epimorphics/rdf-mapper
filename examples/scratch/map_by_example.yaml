@@ -1,5 +1,7 @@
+# Try on mini-data.csv
 imports:
   - colour_mapping.yaml
+
 resources:
 - name: registration
   properties:

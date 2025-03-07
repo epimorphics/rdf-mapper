@@ -1,5 +1,4 @@
-#globals:
-#  "$datasetID": "testds"
+# try on row1.json
 
 namespaces:
   def: "https://epimorphics.com/library/def/"
