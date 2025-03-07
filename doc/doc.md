@@ -27,24 +27,59 @@ Key features:
 
 The mapper works by evaluating a set of templates in the the mapping file, which define the resources to emit, against each row of the supplied data. The field values from the row are passed to the mapping process as a `context` dict which will also include additional builtin and defined variables which can be used in the templates.
 
-## Map file Structure
 
-A full mapping file includes to following option al top level stanzas:
+## Minimal examples
 
-| Name | Description |
-|---|---|
-| `globals:` |  set of name/value bindings to add to the list variables passed in the processing context. |
-| `namespaces:` | set of prefixes/URI maps which can be used as additional namespaces in the templates. |
-| `imports:` | a list of file names to import, these may be python files defining additional transformers or functions, or yaml files defining reusable ontology modules |
-| `resources:` | a list of named resource templates which will be instantiated for each row in the data. |
-| `one_offs:` | a list of named resource templates which will be instances once for the mapper run (and so cannot include any per-row variable references) |
-| `embedded:` | a list of named resource templates which can be used to map embedded structure within a row to a separate resource, used when parsing a complex string yields a structured value. |
-| `properties:` | a list of named property definitions that can be referenced in resource templates. These can include type information (which supports automatic type coercion), reconciliation specifications as well as definitional information (label, comment, cardinality, range) |
-| `class:` | a list of named class definitions, typically used in imported ontology modules. Provides a guide to mapping users on expected properties and will be emitted in the output as an inline class definition. |
+### Simple template
 
-The imported modules may have other placeholder fields (`ontology_source`, `constraints`) which are placeholders for future expansion and are currently ignored.
+A simple template example is:
 
-## Minimal example
+```
+resources:
+  - name: Concept
+    properties:
+      "@id" : "<http://example.com/{$row}>"
+      "@type" : "<skos:Concept>"
+      "<skos:prefLabel>" : "{label}"
+```
+
+This defines one shape and a resources of this shape will be created for each row of the data.
+
+The `@id` line gives an an explicit URI pattern for the created resources, which in this cases uses the row number in the source file to create unique URIs. 
+
+The `@type` line gives a type for the created resource. The URI for the type uses a built in set of namespaces which includes the `skos` prefix for the skos namespace. New namespaces declarations can be declared in the template or imported.
+
+The final line adds a `skos:prefLabel` property for the created concept whose value is taken from the label column in the source data (if CSV data ) or label property of the role (if jsonlines data).
+
+Running this on a test file:
+
+```
+label,refno
+blue,300
+green,400
+```
+
+Generates:
+
+```
+@prefix skos: <http://www.w3.org/2004/02/skos/core#> .
+
+<http://example.com/1> a skos:Concept ;
+    skos:prefLabel "blue" .
+
+<http://example.com/2> a skos:Concept ;
+    skos:prefLabel "green" .
+```
+
+A template can include multiple resource definitions so a row of data can generate multiple (linked) entities.
+
+### Simple auto-declare template
+
+Examples like the above require the template developer to choose the URI pattern for generated resources and to know about namespaces for vocabularlies to use.
+
+To make it possible to create an initial mapping with a mininum of effort the `--auto-declare` option adds the facility to use default URI patterns and declare classes and properties for the data on the fly.
+
+The make this possible a minimal requirement is that the template should declare a short name for the dataset to be process. 
 
 A minimum template example is:
 
@@ -55,17 +90,30 @@ globals:
 resources:  
   - name: HSERegistration
     properties:
-      "Product Name:": ""
-      "MAPP (Reg.) Number:":  ""
+      "Product Name": ""
+      "MAPP (Reg.) Number":  ""
 ```
 
-To process any dataset we need one piece of configuration information - a short identifier for the dataset. This is set by binding `$datasetID` in the first stanza. Variables use a convention of a `$` prefix for builtin or global configuration values.
+The short name for the dataset is set by binding `$datasetID` in the first stanza. Variables use a convention of a `$` prefix for builtin or global configuration values.
 
-This example resource definition means that each row of the source data will generate a resource of type `def:HSERegistration` with two properties, derived from the columns `Product Name:` and `MAPP (Reg.) Number:`. The punctuation like the trailing `:` is part of the source data and will be removed in generated the RDF property name to ensure we have a legal name. The output will also include a minimal class definition for `def:HSERegistration` and for the two properties. The resources themselves will be generated in a `data:` namespace. The `def:` and `data:` namespaces default to be relative to a dataset namespace which in turn uses the `$datasetID` combined with a default global base namespace.
+If run with `--auto-declare` then each row of the source data will generate a resource of type `def:HSERegistration` with two properties, derived from the columns `Product Name` and `MAPP (Reg.) Number` in the source data.  The output will also include a minimal class definition for `def:HSERegistration` and for the two properties. The resources themselves will be generated in a `data:` namespace. The `def:` and `data:` namespaces default to be relative to a dataset namespace which in turn uses the `$datasetID` combined with a default global base namespace. 
 
-The implicit type assignment and the generated `def:` entries for the properties and classes will only be generated when `--auto-declare` is set. This is now off by default to reduce the generation of unexpected declarations.
+## Map file Structure
 
-A template can include multiple resource definitions so a row of data can generate multiple (linked) entities.
+A full mapping file includes the following optional top level stanzas:
+
+| Name | Description |
+|---|---|
+| `globals:` |  set of name/value bindings to add to the list variables passed in the processing context. |
+| `namespaces:` | set of prefixes/URI maps which can be used as additional namespaces in the templates. |
+| `imports:` | a list of file names to import, these may be python files defining additional transformers or functions, or yaml files defining reusable ontology modules |
+| `resources:` | a list of named resource templates which will be instantiated for each row in the data. |
+| `one_offs:` | a list of named resource templates which will be instantiated once for the mapper run (and so cannot include any per-row variable references) |
+| `embedded:` | a list of named resource templates which can be used to map embedded structure within a row to a separate resource, used when parsing a complex string yields a structured value. |
+| `properties:` | a list of named property definitions that can be referenced in resource templates. These can include type information (which supports automatic type coercion), reconciliation specifications as well as definitional information (label, comment, cardinality, range) |
+| `class:` | a list of named class definitions, typically used in imported ontology modules. Provides a guide to mapping users on expected properties and will be emitted in the output as an inline class definition. |
+
+The imported modules may have other placeholder fields (`ontology_source`, `constraints`) which are placeholders for future expansion and are currently ignored.
 
 ## Resource definitions
 

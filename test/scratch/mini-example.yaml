@@ -1,0 +1,10 @@
+namespaces:
+  def: "https://epimorphics.com/library/def/"
+  
+resources:
+  - name: Concept
+    properties:
+      "@id" : "<http://example.com/{$row}>"
+      "@type" : "<skos:Concept>"
+      "<skos:prefLabel>" : "{label}"
+      "<def:referenceNumber>" : "{refno | asInt}"
