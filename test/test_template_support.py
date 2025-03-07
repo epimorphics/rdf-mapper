@@ -131,5 +131,23 @@ class TestTemplateSupport(unittest.TestCase):
         assert isinstance(v, Literal)
         self.assertEqual(v.datatype, XSD.dateTime)
 
+    def test_map_by(self) -> None:
+        spec = MapperSpec({"globals": {"$datasetID": "testds"}})
+        spec.mappings = {
+            "map1": {"foo": "bar"},
+            "map2": {"foo": "<http://example.com/foo>"},
+            "map3": {"foo": "foobar@en"}
+        }
+        state = TemplateState(spec.context.new_child({"val": "foo"}), Graph(), spec)
+        self.assertEqual(value_expand("{ val | map_by('map1')}", spec.namespaces, state), Literal("bar"))
+        self.assertEqual(value_expand("{ val | map_by('map2')}", spec.namespaces, state), URIRef("http://example.com/foo"))
+        self.assertEqual(value_expand("{ val | map_by('map3')}", spec.namespaces, state), Literal("foobar", lang="en"))
+
+    def test_casing(self) -> None:
+        spec = MapperSpec({"globals": {"$datasetID": "testds"}})
+        state = TemplateState(spec.context.new_child({"val": "Foo"}), Graph(), spec)
+        self.assertEqual(value_expand("{ val | toUpper}", spec.namespaces, state), Literal("FOO"))
+        self.assertEqual(value_expand("{ val | toLower}", spec.namespaces, state), Literal("foo"))
+
 if __name__ == '__main__':
     unittest.main()

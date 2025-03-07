@@ -38,6 +38,7 @@ class MapperSpec:
         self.one_offs = [ResourceSpec(spec) for spec in self._getAsList("one_offs")]
         self._init_defaults()
         self.resources = [ResourceSpec(spec) for spec in self._getAsList("resources")]
+        self.mappings = self._getAsDictOfDicts("mappings")
         self.embedded_resources = {}
         for e in self._getAsList("embedded"):
             rs = ResourceSpec(e)
@@ -84,12 +85,25 @@ class MapperSpec:
         self.namespaces = merged.namespaces
         self.propertySpecs = merged.propertySpecs
         self.one_offs = merged.one_offs
+        self.mappings = merged.mappings
 
     def _getAsDict(self, field: str) -> dict:
         v = self.spec.get(field)
         if v is None:
             return {}
         elif type(v) is dict:
+            return v
+        else:
+            _error(f"Expected {field} to be a map/dict was {v}")
+
+    def _getAsDictOfDicts(self, field: str) -> dict[str, dict[str,str]]:
+        v = self.spec.get(field)
+        if v is None:
+            return {}
+        elif type(v) is dict:
+            for key, value in v.items():
+                if type(value) is not dict:
+                    _error(f"Expected {field} to be a map of maps/dicts was {v}")
             return v
         else:
             _error(f"Expected {field} to be a map/dict was {v}")
@@ -108,6 +122,7 @@ class MapperSpec:
         merged_ps = list((other.propertySpecs | self.propertySpecs).values())
         merged_es = list((other.embedded_resources | self.embedded_resources).values())
         merged_oo = self.one_offs + other.one_offs
+        merged_mppings = other.mappings | self.mappings
         return MapperSpec(
             {
                 "globals": other.globals | self.globals,
@@ -115,6 +130,7 @@ class MapperSpec:
                 "properties": [ps.spec for ps in merged_ps],
                 "embedded": [es.spec for es in merged_es],
                 "one_offs": [oo.spec for oo in merged_oo],
+                "mappings": merged_mppings,
             }
         )
 
