@@ -1,0 +1,5 @@
+@prefix def: <https://epimorphics.com/datasets/None/def/> .
+
+<http://example.com/123> def:p <http://example.com/Foo> ;
+    def:q <http://example.com/Bar> .
+

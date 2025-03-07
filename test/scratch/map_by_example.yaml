@@ -1,0 +1,9 @@
+imports:
+  - colour_mapping.yaml
+resources:
+- name: registration
+  properties:
+    "@id": "<http://example.com/{$row}>"
+    "colour": "{label | map_by('colours')}"
+
+    

@@ -1,0 +1,5 @@
+mappings:
+  colours:
+    blue   : "<http://example.com/Blue>"
+    green  : "<http://example.com/Green>"
+    red    : "<http://example.com/Red>"
