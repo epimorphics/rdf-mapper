@@ -18,13 +18,18 @@ from rdf_mapper.lib.template_support import (
 
 class TestTemplateSupport(unittest.TestCase):
 
+    _dummy_spec = MapperSpec({"globals": {"$datasetID": "testds"}})
+
+    def _mkcontext(self, context: dict) -> TemplateState:
+        return TemplateState(self._dummy_spec.context.new_child(context), Graph(), self._dummy_spec)
+
     def test_var_expand(self) -> None:
-        context = {"a": "aval", "b": 42, "z": "zval"}
+        context = self._mkcontext({"a": "aval", "b": 42, "z": "zval"})
         self.assertEqual(pattern_expand("foo {a} bar", context), "foo aval bar")
         self.assertEqual(pattern_expand("{a}foo{b}bar{z}", context), "avalfoo42barzval")
 
     def test_function_expand(self) -> None:
-        context = {"x": 5}
+        context = self._mkcontext({"x": 5})
         self.assertEqual(pattern_expand("{x | asInt3}", context), 15)
         self.assertEqual(pattern_expand("foo {x | asInt3} bar", context), "foo 15 bar")
 
@@ -56,14 +61,14 @@ class TestTemplateSupport(unittest.TestCase):
             "https://epimorphics.com/datasets/testds/data/resty/H11TFU942OGHRQFBN5HVUJ72G4IP6A3O")
 
     def test_value_expand(self) -> None:
-        spec = MapperSpec({"globals": {"$datasetID": "testds"}})
-        state = TemplateState(spec.context.new_child({
+        spec = self._dummy_spec
+        state = self._mkcontext({
             "$row": 3, "$file": "file",
             "x": "foo", "y":"bar",
             "l" : "en",
             "d" : "1.23",
             "list" : "foo, bar"
-        }), Graph(), spec)
+        })
 
         self.assertEqual(
             value_expand("hell{x}o", spec.namespaces, state),
@@ -104,19 +109,26 @@ class TestTemplateSupport(unittest.TestCase):
         self.assertEqual(asBoolean("0"), Literal(False, datatype=XSD.boolean))
 
     def test_fn_call(self) -> None:
-        spec = MapperSpec({"globals": {"$datasetID": "testds"}})
-        state = TemplateState(spec.context.new_child({
+        state = self._mkcontext({
             "$row": 3, "$file": "file", "x": "foo-bar-baz"
-        }), Graph(), spec)
+        })
         self.assertEqual(
-            value_expand("{x | split('-')}", spec.namespaces, state),
+            value_expand("{x | split('-')}", self._dummy_spec.namespaces, state),
             list([Literal("foo"), Literal("bar"), Literal("baz")]))
+
+    def test_inline_eval(self) -> None:
+        state = self._mkcontext({"value": 3})
+        self.assertEqual(value_expand("{value | expr('x*5 + 3')}", self._dummy_spec.namespaces, state), Literal(18))
+        self.assertEqual(value_expand("{value | expr('(x+6)//3')}", self._dummy_spec.namespaces, state), Literal(3))
+        # Repeat earlier test to check the caching of compiled expressions is working
+        self.assertEqual(value_expand("{value | expr('x*5 + 3')}", self._dummy_spec.namespaces, state), Literal(18))
 
     def test_now(self) -> None:
         spec = MapperSpec({"globals": {"$datasetID": "testds"}})
         state = TemplateState(spec.context.new_child({"$row": 1, "$file": "file"}), Graph(), spec)
         v = value_expand("{|now}", spec.namespaces, state)
         self.assertTrue(isinstance(v, Literal))
+        assert isinstance(v, Literal)
         self.assertEqual(v.datatype, XSD.dateTime)
 
 if __name__ == '__main__':

@@ -421,6 +421,15 @@ def splitComma(s: str, state: TemplateState | None = None) -> list:
 def split(s: str, state: TemplateState, reg: str) -> list:
     return re.split(reg, s)
 
+_EXPR_CACHE: dict[str, Any] = {}
+
+def expr(s: Any, state: TemplateState | None = None, expression: str = "") -> Any:  # noqa: A001
+    code = _EXPR_CACHE.get(expression)
+    if not code:
+        code = compile(expression, "<String>", "eval")
+        _EXPR_CACHE[expression] = code
+    return eval(code, {}, {"x": s, "state": state})
+
 def _create_resource(data: dict, state: TemplateState, rs: ResourceSpec) -> IdentifiedNode | None:
     if not rs.name:
         raise ValueError("Resource spec must have a name, {rs}")

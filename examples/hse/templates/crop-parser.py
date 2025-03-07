@@ -6,8 +6,8 @@
 
 from lark import Lark, Transformer
 from lark.visitors import v_args
-from lib.template_state import TemplateState
-from lib.template_support import register_fn
+from rdf_mapper.lib.template_state import TemplateState
+from rdf_mapper.lib.template_support import register_fn
 
 crop_parser = Lark(r"""
     crop_list: crop | [crop ","]+ crop

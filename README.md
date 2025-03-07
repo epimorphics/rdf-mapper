@@ -9,15 +9,23 @@
 * can import vocabulary modules so mapping can refer to those terms
 * can import processing modules for custom parsing or transformations
 
-## Set up
+## Changes
+
+### Version 0.2.0
+
+   * wrap as module `rdf_mapper` which defines a `mapper` CLI
+   * fix issues with skipping property rows that reference missing source values
+   * include namespace declarations in the generated ttl
+   * make `asDate` treat a bare year as `yyyy-01-01`
+   * add `expr()` transform to allow inline python expressions in value mappings
+
+## Dev set up
 
 Create virtual env and install dependencies:
 
     python3 -m venv venv
     . venv/bin/activate
     pip install .
-       
-## Dev set up
 
     pip install rdf_mapper[dev]
     pip install -e .

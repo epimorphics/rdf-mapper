@@ -7,8 +7,8 @@
 from lark import Lark, Transformer
 from lark.visitors import v_args
 from decimal import Decimal
-from lib.template_state import TemplateState
-from lib.template_support import register_fn
+from rdf_mapper.lib.template_state import TemplateState
+from rdf_mapper.lib.template_support import register_fn
 
 substance_parser = Lark(r"""
     ingredient_list: ingredient

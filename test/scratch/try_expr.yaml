@@ -1,0 +1,8 @@
+namespaces:
+  def: "https://epimorphics.com/library/def/"
+  
+resources:
+  - name: Test
+    properties:
+      "@id" : "<http://example.com/{$row}>"
+      "<def:p>" : "{id | expr('(int(x) - 3) // 6')}"
