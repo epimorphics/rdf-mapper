@@ -1,0 +1,9 @@
+<http://example.com/12> <http://example.com/latest_value> "42"^^<http://www.w3.org/2001/XMLSchema#integer> <http://example.com/current> .
+<http://example.com/34> <http://example.com/latest_value> "35"^^<http://www.w3.org/2001/XMLSchema#integer> <http://example.com/current> .
+<http://example.com/56> <http://example.com/latest_value> "451"^^<http://www.w3.org/2001/XMLSchema#integer> <http://example.com/current> .
+<http://example.com/12> <http://www.w3.org/2000/01/rdf-schema#label> "label1" <http://example.com/base> .
+<http://example.com/12> <http://example.com/value> "42"^^<http://www.w3.org/2001/XMLSchema#integer> <http://example.com/base> .
+<http://example.com/34> <http://www.w3.org/2000/01/rdf-schema#label> "label2" <http://example.com/base> .
+<http://example.com/34> <http://example.com/value> "35"^^<http://www.w3.org/2001/XMLSchema#integer> <http://example.com/base> .
+<http://example.com/56> <http://www.w3.org/2000/01/rdf-schema#label> "label3" <http://example.com/base> .
+<http://example.com/56> <http://example.com/value> "451"^^<http://www.w3.org/2001/XMLSchema#integer> <http://example.com/base> .

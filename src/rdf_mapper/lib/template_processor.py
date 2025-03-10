@@ -5,7 +5,7 @@ Processor to generate RDF transformed output from each row of source data based 
 import logging
 from typing import TextIO
 
-from rdflib import Dataset, URIRef, Graph
+from rdflib import Dataset, Graph, URIRef
 from rdflib.namespace import NamespaceManager
 
 from rdf_mapper.lib.mapper_spec import MapperSpec
@@ -50,8 +50,10 @@ class TemplateProcessor:
         return self.dataset
 
     def bind_namespaces(self) -> None:
-        """Set the namespace prefixes for the detault graph. If set first these will be inherited by all other graphs."""
-        nm = NamespaceManager(Graph(), bind_namespaces="core") # Suppress spurious namespaces
+        """Set the namespace prefixes for the dataset."""
+        nm = NamespaceManager(Graph(),
+                               # Suppress spurious namespaces
+                              bind_namespaces="core")
         self.dataset.namespace_manager = nm
         for ns, uri in self.spec.namespaces.items():
             nm.bind(ns, uri)

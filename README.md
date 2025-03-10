@@ -12,9 +12,13 @@
 
 ## usage
 
-    mapper [--auto-declare] template input [output]
+    mapper [--auto-declare] [--format=turtle] template input [output]
 
-Generates a `mapper.log` with record of actions and warnings, warnings also flagged to stderr.
+Formats supported are `turtle` (default), `trig`, `nquads` and `update`. 
+
+If no output file is specified the transformed data will be written to stdout.
+
+Non-fatal warnings will be logged to stderr and to `mapper.log`.
 
 See ./examples/hse/templates for example mapping templates (note that templates 6 and 7 there require a reconciliation service running).
 
@@ -33,6 +37,7 @@ See [docs](./doc/doc.md)
    * add `expr()` transform to allow inline python expressions in value mappings
    * suppress auto create of properties, classes and resource types unless `--auto-declare` is set - avoids need to always have explicit `@type`
    * support for value mapping tables (could extend to support CSV-based maps if desired)
+   * support for output to multiple graphs
 
 ## Dev set up
 
