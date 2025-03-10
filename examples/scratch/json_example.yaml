@@ -8,6 +8,7 @@ embedded:
 
 resources:
   - name: Product
+    "@graph": "<http://example.com/{$file}>"
     properties:
       "@id": "<http://example.com/products/{$row}>"
       "@type": "<http://example.com/Product>"

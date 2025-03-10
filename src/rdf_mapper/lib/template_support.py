@@ -231,6 +231,10 @@ def process_resource_spec(name: str, rs: ResourceSpec, state: TemplateState) -> 
                 logging.warning(f"Skipping resource {rs.name} on row {state.get('$row')} because value for {key} is empty.")
                 return None
 
+    # Check for switch of graph
+    if rs.graph:
+        state = state.switch_to_graph(uri_expand(rs.graph, namespaces, state))
+
     # If we have no URI assignment default to the row pattern
     id_template = rs.find_prop_defn("@id") or "<row>"
     if id_template == "<_>":
@@ -265,7 +269,7 @@ def process_resource_spec(name: str, rs: ResourceSpec, state: TemplateState) -> 
 
 def process_property_value(resource: IdentifiedNode, prop: str, template: Any, state: TemplateState) -> None:
     """Process a single property expansion."""
-    if prop == "@id" or prop == "@type":
+    if prop == "@id" or prop == "@type" or prop == "@graph":
         return   # already processed
 
     if isinstance(template, list):

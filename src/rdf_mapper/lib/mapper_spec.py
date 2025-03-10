@@ -198,6 +198,7 @@ class ResourceSpec:
             props = spec.get("properties")
             self.spec = spec
             self.name = spec.get("name")
+            self.graph = spec.get("@graph")
             self.properties = _listify(props)
             self.requires = spec.get("requires")
             if self.requires is not None and not isinstance(self.requires, dict):

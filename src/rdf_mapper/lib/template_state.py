@@ -43,7 +43,7 @@ class TemplateState:
         self.dataset = dataset
         self.backlinks = {}
         self.reconcile_stack = reconcile_stack
-        self.switch_to_default_graph()
+        self.ensure_graph()
 
     def add_to_context(self, prop: str, value: str) -> None:
         self.context[prop] = value
@@ -89,9 +89,14 @@ class TemplateState:
         """If there is an auto CV entry for this already return it."""
         return self.backlinks.get(f"{name}/{label}")
 
-    def switch_to_default_graph(self) -> None:
-        """Switch to the default graph for the dataset."""
-        self.context['$graph'] = DEFAULT_GRAPH
+    def ensure_graph(self) -> None:
+        """If no graph is set then make it the default graph"""
+        if '$graph' not in self.context:
+            self.context['$graph'] = DEFAULT_GRAPH
+
+    def switch_to_graph(self, graph: str) -> TemplateState:
+        """Switch to a named graph, returns new temporary state."""
+        return self.child({'$graph': graph})
 
     def current_graph(self) -> Graph:
         """Return the current graph being generated."""
