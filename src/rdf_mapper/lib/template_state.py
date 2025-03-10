@@ -3,11 +3,12 @@ from __future__ import annotations
 from collections import ChainMap
 from typing import Any
 
-from rdflib import Graph, IdentifiedNode, URIRef
+from rdflib import Dataset, Graph, IdentifiedNode, URIRef
 
 from rdf_mapper.lib.mapper_spec import MapperSpec
 from rdf_mapper.lib.reconcile import MatchResult
 
+DEFAULT_GRAPH = "urn:x-rdflib:default"
 
 class TemplateState:
     """
@@ -29,18 +30,20 @@ class TemplateState:
     * $row         - row number of the line being ingested
     * $prop        - name of the current property being expanded
     * $datasetBase - base URI for this dataset by default computed from baseURI and datasetID
+    * $graph       - the graph being generated, use `urn:x-rdflib:default` for the default graph
     * $resourceID  - short ID for the resource being generated, uses the name field in the template
     * $parentID    - full URI for parent resource when processing embedded templates
     * $listIndex   - index in list when processing a list of results from a chained transform
     * $reconciliationAPI - API endpoint for reconciliation, may be global or for a specific property
     """
 
-    def __init__(self, context: ChainMap[str,Any], graph: Graph, spec: MapperSpec, reconcile_stack: dict = {}) -> None:
+    def __init__(self, context: ChainMap[str,Any], dataset: Dataset, spec: MapperSpec, reconcile_stack: dict = {}) -> None:
         self.spec = spec
         self.context = context
-        self.graph = graph
+        self.dataset = dataset
         self.backlinks = {}
         self.reconcile_stack = reconcile_stack
+        self.switch_to_default_graph()
 
     def add_to_context(self, prop: str, value: str) -> None:
         self.context[prop] = value
@@ -50,7 +53,7 @@ class TemplateState:
 
     def child(self, subcontext: dict) -> TemplateState:
         """Return a new template state which mirrors this but with additional temporary context bindings."""
-        child = TemplateState(self.context.new_child(subcontext), self.graph, self.spec, self.reconcile_stack)
+        child = TemplateState(self.context.new_child(subcontext), self.dataset, self.spec, self.reconcile_stack)
         child.backlinks = self.backlinks
         return child
 
@@ -85,6 +88,18 @@ class TemplateState:
     def get_auto_entry(self, name: str, label: str) -> URIRef | None:
         """If there is an auto CV entry for this already return it."""
         return self.backlinks.get(f"{name}/{label}")
+
+    def switch_to_default_graph(self) -> None:
+        """Switch to the default graph for the dataset."""
+        self.context['$graph'] = DEFAULT_GRAPH
+
+    def current_graph(self) -> Graph:
+        """Return the current graph being generated."""
+        return self.dataset.graph(self.context['$graph'])
+
+    def add_to_graph(self, triple: tuple) -> None:
+        """Add a triple to the current graph."""
+        self.current_graph().add(triple)
 
 class ReconciliationRecord:
     def __init__(self, key: str, keytype: str | None, _id: IdentifiedNode | None = None) -> None:
