@@ -2,7 +2,7 @@ import unittest
 from io import StringIO
 
 from rdf_mapper.lib.mapper_spec import MapperSpec
-from rdf_mapper.lib.template_processor import TemplateProcessor
+from rdf_mapper.lib.template_processor import DEFAULT_GRAPH, TemplateProcessor
 
 
 class TestTemplateProcessor(unittest.TestCase):
@@ -240,7 +240,7 @@ class TestTemplateProcessor(unittest.TestCase):
         for row in rows:
             proc.process_row(row)
         proc.bind_namespaces()
-        result = proc.graph.serialize(format='turtle')
+        result = proc.dataset.graph(DEFAULT_GRAPH).serialize(format='turtle')
         if not expected:
             print(result)
         else:

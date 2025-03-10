@@ -1,39 +1,43 @@
 """
-    Processor to generate RDF transformed output from each row of source data based on mapper spec.
+Processor to generate RDF transformed output from each row of source data based on mapper spec.
 """
 
 import logging
 from typing import TextIO
 
-from rdflib import Graph
+from rdflib import Dataset, Graph, URIRef
+from rdflib.namespace import NamespaceManager
 
 from rdf_mapper.lib.mapper_spec import MapperSpec
 from rdf_mapper.lib.template_state import TemplateState
 from rdf_mapper.lib.template_support import process_resource_spec
 
+DEFAULT_GRAPH = "urn:x-rdflib:default"
+DEFAULT_GRAPH_ID = URIRef(DEFAULT_GRAPH)
+
 
 class TemplateProcessor:
-
     def __init__(self, spec: MapperSpec, filename: str, output: TextIO) -> None:
         self.spec = spec
         self.output = output
-        self.graph = Graph()   # TODO streaming version
+        self.dataset = Dataset()  # TODO streaming version
+        self.bind_namespaces()
         self.row = 0
-        self.context = self.spec.context.new_child({'$file' : filename, '$row' : None})
-        self.state = TemplateState(self.context, self.graph, self.spec)
+        self.context = self.spec.context.new_child({"$file": filename, "$row": None, "$graph": DEFAULT_GRAPH})
+        self.state = TemplateState(self.context, self.dataset, self.spec)
         for one_off in spec.one_offs:
             if not one_off.name:
                 logging.error(f"One-off resource has no name {one_off}")
             else:
                 process_resource_spec(one_off.name, one_off, self.state)
 
-    def process_row(self, data: dict) -> Graph:
+    def process_row(self, data: dict) -> Dataset:
         """
-          Process one row of data returning current state of graph for test purposes,
-          may be new graph just for this row.
+        Process one row of data returning current state of RDF store for test purposes,
+        may be new graph just for this row.
         """
         self.row += 1
-        self.context['$row'] = self.row
+        self.context["$row"] = self.row
         state = self.state.child(data)
         try:
             for rspec in self.spec.resources:
@@ -43,15 +47,41 @@ class TemplateProcessor:
                     process_resource_spec(rspec.name, rspec, state)
         except Exception as err:
             logging.error(f"Failure on row {self.row} with {err}")
-        return self.graph
+        return self.dataset
 
     def bind_namespaces(self) -> None:
+        """Set the namespace prefixes for the dataset."""
+        nm = NamespaceManager(Graph(),
+                               # Suppress spurious namespaces
+                              bind_namespaces="core")
+        self.dataset.namespace_manager = nm
         for ns, uri in self.spec.namespaces.items():
-            self.graph.bind(ns, uri)
-        self.graph.bind("def", f"{self.spec.context['$datasetBase']}/def/", override=False)
+            nm.bind(ns, uri)
+        nm.bind("def", f"{self.spec.context['$datasetBase']}/def/", override=False, replace=False)
 
-    def finalize(self) -> None:
+    def write_as_update(self) -> None:
+        """Write the current state of the dataset as a SPARQL update."""
+        with self.output as out:
+            defgraph = self.dataset.graph(DEFAULT_GRAPH)
+            for ns, uri in defgraph.namespaces():
+                out.write(f"PREFIX {ns}: <{uri}>\n")
+            for g in self.dataset.graphs():
+                out.write("INSERT DATA {\n")
+                if g.identifier != DEFAULT_GRAPH_ID:
+                    out.write(f"GRAPH <{g.identifier}> {{\n")
+                for line in g.serialize(format="turtle").splitlines():
+                    if line.startswith("@prefix"):
+                        continue
+                    out.write(line)
+                    out.write("\n")
+                if g.identifier != DEFAULT_GRAPH_ID:
+                    out.write("}\n")
+                out.write("};\n")
+
+    def finalize(self, fmt: str) -> None:
         logging.info(f"Processed {self.row} lines")
-        self.bind_namespaces()
-        self.output.write(self.graph.serialize(format='turtle'))
-        self.output.close()
+        if fmt == "update":
+            self.write_as_update()
+        else:
+            with self.output as out:
+                out.write(self.dataset.serialize(format=fmt))

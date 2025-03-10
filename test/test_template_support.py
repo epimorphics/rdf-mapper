@@ -1,7 +1,7 @@
 import re
 import unittest
 
-from rdflib import XSD, Graph, Literal, URIRef
+from rdflib import XSD, Dataset, Literal, URIRef
 
 from rdf_mapper.lib.mapper_spec import MapperSpec
 from rdf_mapper.lib.template_state import TemplateState
@@ -21,7 +21,7 @@ class TestTemplateSupport(unittest.TestCase):
     _dummy_spec = MapperSpec({"globals": {"$datasetID": "testds"}})
 
     def _mkcontext(self, context: dict) -> TemplateState:
-        return TemplateState(self._dummy_spec.context.new_child(context), Graph(), self._dummy_spec)
+        return TemplateState(self._dummy_spec.context.new_child(context), Dataset(), self._dummy_spec)
 
     def test_var_expand(self) -> None:
         context = self._mkcontext({"a": "aval", "b": 42, "z": "zval"})
@@ -40,7 +40,7 @@ class TestTemplateSupport(unittest.TestCase):
             "x": "foo", "y":"bar",
             "$resourceID":"resty",
             })
-        state = TemplateState(context, Graph(), spec)
+        state = TemplateState(context, Dataset(), spec)
         self.assertEqual(
             uri_expand("p", spec.namespaces, state),
             "https://epimorphics.com/datasets/testds/def/p")
@@ -125,7 +125,7 @@ class TestTemplateSupport(unittest.TestCase):
 
     def test_now(self) -> None:
         spec = MapperSpec({"globals": {"$datasetID": "testds"}})
-        state = TemplateState(spec.context.new_child({"$row": 1, "$file": "file"}), Graph(), spec)
+        state = TemplateState(spec.context.new_child({"$row": 1, "$file": "file"}), Dataset(), spec)
         v = value_expand("{|now}", spec.namespaces, state)
         self.assertTrue(isinstance(v, Literal))
         assert isinstance(v, Literal)
@@ -138,14 +138,14 @@ class TestTemplateSupport(unittest.TestCase):
             "map2": {"foo": "<http://example.com/foo>"},
             "map3": {"foo": "foobar@en"}
         }
-        state = TemplateState(spec.context.new_child({"val": "foo"}), Graph(), spec)
+        state = TemplateState(spec.context.new_child({"val": "foo"}), Dataset(), spec)
         self.assertEqual(value_expand("{ val | map_by('map1')}", spec.namespaces, state), Literal("bar"))
         self.assertEqual(value_expand("{ val | map_by('map2')}", spec.namespaces, state), URIRef("http://example.com/foo"))
         self.assertEqual(value_expand("{ val | map_by('map3')}", spec.namespaces, state), Literal("foobar", lang="en"))
 
     def test_casing(self) -> None:
         spec = MapperSpec({"globals": {"$datasetID": "testds"}})
-        state = TemplateState(spec.context.new_child({"val": "Foo"}), Graph(), spec)
+        state = TemplateState(spec.context.new_child({"val": "Foo"}), Dataset(), spec)
         self.assertEqual(value_expand("{ val | toUpper}", spec.namespaces, state), Literal("FOO"))
         self.assertEqual(value_expand("{ val | toLower}", spec.namespaces, state), Literal("foo"))
 

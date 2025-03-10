@@ -231,6 +231,10 @@ def process_resource_spec(name: str, rs: ResourceSpec, state: TemplateState) -> 
                 logging.warning(f"Skipping resource {rs.name} on row {state.get('$row')} because value for {key} is empty.")
                 return None
 
+    # Check for switch of graph
+    if rs.graph:
+        state = state.switch_to_graph(uri_expand(rs.graph, namespaces, state))
+
     # If we have no URI assignment default to the row pattern
     id_template = rs.find_prop_defn("@id") or "<row>"
     if id_template == "<_>":
@@ -248,10 +252,10 @@ def process_resource_spec(name: str, rs: ResourceSpec, state: TemplateState) -> 
         _id = uri_expand(type_template, namespaces, state)
         _record_implicit_class(name, _id, rs.spec.get("comment"), state)
         type_uri = URIRef(_id)
-        state.graph.add((resource, RDF.type, type_uri))
+        state.add_to_graph((resource, RDF.type, type_uri))
     elif type_template:
         type_uri = URIRef(uri_expand(type_template, namespaces, state))
-        state.graph.add((resource, RDF.type, type_uri))
+        state.add_to_graph((resource, RDF.type, type_uri))
 
     # Process the properties
     for (prop, template) in rs.properties:
@@ -265,7 +269,7 @@ def process_resource_spec(name: str, rs: ResourceSpec, state: TemplateState) -> 
 
 def process_property_value(resource: IdentifiedNode, prop: str, template: Any, state: TemplateState) -> None:
     """Process a single property expansion."""
-    if prop == "@id" or prop == "@type":
+    if prop == "@id" or prop == "@type" or prop == "@graph":
         return   # already processed
 
     if isinstance(template, list):
@@ -288,7 +292,7 @@ def process_property_value(resource: IdentifiedNode, prop: str, template: Any, s
             (prop, template) = prop_spec.propValueTemplate(template)
             if prop_spec.cls:
                 class_ref = URIRef(uri_expand(prop_spec.cls, namespaces, state))
-                state.graph.add((resource, RDF.type, class_ref))
+                state.add_to_graph((resource, RDF.type, class_ref))
         else:
             raise ValueError(f"could not find property specification {prop}")
 
@@ -313,14 +317,14 @@ def process_property_value(resource: IdentifiedNode, prop: str, template: Any, s
 
     if isinstance(value, list):
         for v in value:
-            state.graph.add((resource, propref, v))
+            state.add_to_graph((resource, propref, v))
     else:
         if value is not None:
             if inverse:
                 triple = (value, propref, resource)
             else:
                 triple = (resource, propref, value)
-            state.graph.add(triple)
+            state.add_to_graph(triple)
         elif prop_spec and  prop_spec.required:
             raise ValueError(f"Value missing for required property {prop_spec.name}, pattern: {template}")
         # else do nothing, missing value but not required
@@ -519,7 +523,7 @@ def reconcile(key: str, state: TemplateState, name: str, _type: str | None = Non
                         raise ValueError(f"Failed to create reconciled resource for {keydesc}")
                     else:
                         for pm in matchResult.possible_matches:
-                            pm.record_as_rdf(state.graph, _id)
+                            pm.record_as_rdf(state.current_graph(), _id)
             if not _id:
                 raise ValueError(f"Failed to create reconciled resource for {keydesc}")
             else:

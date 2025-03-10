@@ -11,19 +11,19 @@ from rdf_mapper.lib.mapper_spec import load_template
 from rdf_mapper.lib.template_processor import TemplateProcessor
 
 
-def process_jsonlines(file:TextIO, processor:TemplateProcessor) -> None:
+def process_jsonlines(file:TextIO, processor:TemplateProcessor, fmt: str) -> None:
     with(file):
         for line in file:
             data = json.loads(line)
             processor.process_row(data)
-    processor.finalize()
+    processor.finalize(fmt)
 
-def process_csv(file:TextIO, processor:TemplateProcessor)  -> None:
+def process_csv(file:TextIO, processor:TemplateProcessor, fmt: str)  -> None:
     with(file):
         reader = csv.DictReader(file)
         for row in reader:
             processor.process_row(row)
-    processor.finalize()
+    processor.finalize(fmt)
 
 argparser = argparse.ArgumentParser(
     description='Transform and reconcile csv or jsonlines file based on a mapping template'
@@ -36,6 +36,8 @@ argparser.add_argument('outfile', nargs='?', type=argparse.FileType('w'), defaul
                        help='Optional output file, defaults to stdout')
 argparser.add_argument('--auto-declare', action='store_true',
                        help='Automatically declare new classes and properties')
+argparser.add_argument('--format', choices=['turtle', 'nquads', 'trig', 'update'], required=False, default='turtle',
+                        help='Output format: nquads, trig, or update')
 
 def main() -> None:
     args = argparser.parse_args()
@@ -46,9 +48,9 @@ def main() -> None:
     filename, extension = os.path.splitext(datafile.name)
     processor = TemplateProcessor(spec, filename, args.outfile)
     if (extension == ".json" or extension == ".jsonlines"):
-        process_jsonlines(datafile, processor)
+        process_jsonlines(datafile, processor, args.format)
     elif (extension == ".csv"):
-        process_csv(datafile, processor)
+        process_csv(datafile, processor, args.format)
     else:
         print(f"Did not recognise file type of {datafile.name}")
 

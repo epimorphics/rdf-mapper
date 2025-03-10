@@ -8,8 +8,10 @@ Maps are expressed in (largely) declarative yaml and the mapper tool will proces
 
 Operation:
 ```
-    ./mapper.py [--auto-declare] template input [output]
+    mapper [--auto-declare] [--format=turtle] template input [output]
 ```
+
+Formats supported are `turtle` (default), `trig`, `nquads` and `update`. The latter writes a Sparql Update script for inserting data (in appropriate graphs is there are multiple graphs).
 
 If no output file is specified the transformed data will be written to stdout.
 
@@ -24,6 +26,7 @@ Key features:
 * option to auto-create micro controlled vocabularies on the fly
 * ability to import import vocabulary modules so that mapping can refer to those terms, supporting a minimal approach to ontology reuse
 * ability to import processing modules when complex input parsing is required, allowing such coding tasks to be separated from the overall mapping definition
+* support for output to multiple graphs
 
 The mapper works by evaluating a set of templates in the the mapping file, which define the resources to emit, against each row of the supplied data. The field values from the row are passed to the mapping process as a `context` dict which will also include additional builtin and defined variables which can be used in the templates.
 
@@ -125,6 +128,7 @@ Resource definitions can have the following fields:
 | `name` | Short name for the resource. For locally typed resources will be used the local name of the class URI and its `rdfs:label`. Also used for back references within templates. Required. |
 | `comment` | Descriptive comment, will be used as `rdfs:comment` on any auto generated class definition. |
 | `requires` | An optional dictionary mapping column names to the value required to be in that column for the resource mapping to be applied. If no value is provided, then the column is required to have any non-empty value.
+| `@graph` | Optional URI of a graph to which the resource template should be written. Can be a URI template. If not specified writes to the current `$graph` setting which defaults to the default graph |
 | `properties` | List of property/value templates defining the properties to attach to the generated resource |
 
 Entries in `one_offs` are identical to `resources` definitions, the difference is in their application, one offs are only generated once for the run and are a way to create static resources that the rows can refer to. 
@@ -184,6 +188,7 @@ Variables available for use in patterns include the fields (columns) each data r
 | `$datasetID` | short id string for this dataset, must be set in the template if using `--auto-declare` |
 | `$file` | name of the file being ingested |
 | `$row` | row number of the line being ingested |
+| `$graph` | graph name to use for output, defaults to the default graph |
 | `$prop` | name of the current property being expanded |
 | `$datasetBase` | base URI for this dataset, defaults to `{$baseURI}{$datasetId}` |
 | `$resourceID` | short ID for the resource being generated, uses the name field in the template |
