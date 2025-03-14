@@ -96,7 +96,7 @@ class MapperSpec:
         else:
             _error(f"Expected {field} to be a map/dict was {v}")
 
-    def _getAsDictOfDicts(self, field: str) -> dict[str, dict[str,str]]:
+    def _getAsDictOfDicts(self, field: str) -> dict[str, dict[str, str]]:
         v = self.spec.get(field)
         if v is None:
             return {}
@@ -133,6 +133,7 @@ class MapperSpec:
                 "mappings": merged_mppings,
             }
         )
+
 
 def _error(message: str) -> NoReturn:
     print(f"Badly formatted mapping spec: {message}", file=sys.stderr)
@@ -198,7 +199,8 @@ class ResourceSpec:
             props = spec.get("properties")
             self.spec = spec
             self.name = spec.get("name")
-            self.graph = spec.get("@graph")
+            self.graph = spec.get("@graph") or spec.get("@graphAdd")
+            self.preserved_graph = "@graphAdd" in spec
             self.properties = _listify(props)
             self.requires = spec.get("requires")
             if self.requires is not None and not isinstance(self.requires, dict):

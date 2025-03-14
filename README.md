@@ -43,11 +43,11 @@ See [docs](./doc/doc.md)
 
 Create virtual env and install dependencies:
 
-    python3 -m venv venv
-    . venv/bin/activate
+    python3 -m venv .venv
+    . .venv/bin/activate
     pip install .
 
-    pip install rdf_mapper[dev]
+    pip install .[dev]
     pip install -e .
 
 Linting:

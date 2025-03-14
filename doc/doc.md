@@ -11,7 +11,16 @@ Operation:
     mapper [--auto-declare] [--format=turtle] template input [output]
 ```
 
-Formats supported are `turtle` (default), `trig`, `nquads` and `update`. The latter writes a Sparql Update script for inserting data (in appropriate graphs is there are multiple graphs).
+Formats supported are `turtle` (default), `trig`, `nquads`, `update` and `delete`. 
+
+For the default format then the default graph is written out as `turtle`, if any of the templates target named graphs their output will be lost.
+
+With `update` format then a Sparql Update script is generated which can be used to update an existing dataset. All resources with a `@graph` will be written to the corresponding graph, replacing any existing content (the script will `DROP SILENT` all such graphs before inserting new data). Existing graph data can be preserved by using the `@graphAdd` directive instead.
+
+With `delete` format the data is transformed as normal but the output will be a Sparql Update script which will delete any `@graph`s and will delete the triples from any `@graphAdd` graphs. This allows a previous update to be removed instead of replaced. 
+
+> [!NOTE]
+> Care must be taken when using `delete` format with templates that include `@graphAdd`. Any bNodes generated in such preserved graphs will not be removed. Furthermore, any matching triples that had already been in the graph added to prior to the previous `update` will be removed and thus lost.
 
 If no output file is specified the transformed data will be written to stdout.
 
@@ -82,7 +91,7 @@ Examples like the above require the template developer to choose the URI pattern
 
 To make it possible to create an initial mapping with a mininum of effort the `--auto-declare` option adds the facility to use default URI patterns and declare classes and properties for the data on the fly.
 
-The make this possible a minimal requirement is that the template should declare a short name for the dataset to be processed. 
+To make this possible a minimal requirement is that the template should declare a short name for the dataset to be processed. 
 
 A minimum template example is:
 
@@ -112,7 +121,7 @@ A full mapping file includes the following optional top level stanzas:
 | `imports:` | a list of file names to import, these may be python files defining additional transformers or functions, or yaml files defining reusable ontology modules |
 | `resources:` | a list of named resource templates which will be instantiated for each row in the data. |
 | `one_offs:` | a list of named resource templates which will be instantiated once for the mapper run (and so cannot include any per-row variable references) |
-| `embedded:` | a list of named resource templates which can be used to map embedded structure within a row to a separate resource,see `map_to` transformer |
+| `embedded:` | a list of named resource templates which can be used to map embedded structure within a row to a separate resource, see `map_to` transformer |
 | `mappings:` | a dict of named mapping dictionaries used via `map_by` |
 | `properties:` | a list of named property definitions that can be referenced in resource templates. These can include type information (which supports automatic type coercion), reconciliation specifications as well as definitional information (label, comment, cardinality, range) |
 | `class:` | a list of named class definitions, typically used in imported ontology modules. Provides a guide to mapping users on expected properties and will be emitted in the output as an inline class definition. |
@@ -125,10 +134,11 @@ Resource definitions can have the following fields:
 
 | Field | Description |
 |---|---|
-| `name` | Short name for the resource. For locally typed resources will be used the local name of the class URI and its `rdfs:label`. Also used for back references within templates. Required. |
+| `name` | Short name for the resource. If using auto-generate then this will be the local name of the class URI and its `rdfs:label`. Also used for back references within templates. Required. |
 | `comment` | Descriptive comment, will be used as `rdfs:comment` on any auto generated class definition. |
 | `requires` | An optional dictionary mapping column names to the value required to be in that column for the resource mapping to be applied. If no value is provided, then the column is required to have any non-empty value.
-| `@graph` | Optional URI of a graph to which the resource template should be written. Can be a URI template. If not specified writes to the current `$graph` setting which defaults to the default graph |
+| `@graph` | Optional URI of a graph to which the resource template should be written. Can be a URI template. If not specified writes to the current `$graph` setting which defaults to the default graph. When using `update` format then any existing graph contents will be replaced. |
+| `@graphAdd` | As for `@graph` except that any existing graph contents will be preserved. |
 | `properties` | List of property/value templates defining the properties to attach to the generated resource |
 
 Entries in `one_offs` are identical to `resources` definitions, the difference is in their application, one offs are only generated once for the run and are a way to create static resources that the rows can refer to. 
@@ -195,6 +205,10 @@ Variables available for use in patterns include the fields (columns) each data r
 | `$parentID`  | full URI for parent resource when processing embedded templates |
 | `$listIndex` |index in list when processing a list of results from a chained transform |
 | `$reconciliationAPI` | API endpoint for reconciliation, may be global or for a specific property |
+
+When processing a row of CSV data then a variable will be set for for each column in the CSV which has a non-empty value.
+
+Similarly, when processing jsonlines data a variable will be defined for each top level property key in the json object. In the case of non-flat jsonlines then the value bound to the variable may be an array or nested json object - use the `map_to` transformation to apply embedded templates in such cases.
 
 ### Property references
 
@@ -272,8 +286,8 @@ A variable binding within a value pattern can be passed through a set of transfo
 | `map_by('mapping-name')` | Maps the value via a lookup table supplied in the `mappings` stanza, see below |
 | `map_to('template')` | Assumes the variable is an object or list of objects (e.g. as generated by a parser or from structure input) and transforms to a resource or set of resources using the embedded template named `template`   |
 | `reconcile(...)` | Reconcile the value, see later    |
-| `autoCV` or `autoCV(name,type)` | Replace a string value with a generated concept whose preLabel is the string value. Will emit the autogenerated concept scheme. If no `name` is given then it uses the name of the property being generated as the name of the concept scheme. The optional `type` argument can be either `hash` to use a hash of the label as the local part of the concept URI or `label` to use the normalized label directly (the default). |
-| `now` | Return the current date time, the argument is ignored so use as e.g. `{\|now}  |
+| `autoCV` or `autoCV(name,type)` | Replace a string value with a generated concept whose prefLabel is the string value. Will emit the autogenerated concept scheme. If no `name` is given then it uses the name of the property being generated as the name of the concept scheme. The optional `type` argument can be either `hash` to use a hash of the label as the local part of the concept URI or `label` to use the normalized label directly (the default). |
+| `now` | Return the current date time, the argument is ignored so use as e.g. `{\|now}`  |
 
 New transformations can be defined as python functions and registered with the mapper. The function should accept an incoming value and a `rdf_mapper.lib.template_state.TemplateState` and be register using `rdf_mapper.lib.template_support.register_fn`, see parser examples.
 
@@ -284,7 +298,7 @@ When a transform generates a list of values (e.g. the `split` transformers) then
 ### Simple mappings 
 Often we need to map values in the source data to a standardized reference terms.
 
-In the simple cases the source value matches exactly with a key in a mapping table. This supported through the `mappings:` staza. This should be a dictionary of named mappings, each mapping between a dictionary mapping a key to a value to substitute. The value can be any of the above templates forms, in particular use "<...>" to make the value a URI.
+In the simple cases the source value matches exactly with a key in a mapping table. This is supported through the `mappings:` staza. This should be a dictionary of named mappings, each mapping between a dictionary mapping a key to a value to substitute. The value can be any of the above templates forms, in particular use `<...>` to make the value a URI.
 
 For example:
 
@@ -369,7 +383,7 @@ imports:
 
 Missing property values are not treated as a errors, the corresponding property is simply omitted.
 
-Attempts at type coercion which fail are similarly treated as if missing rather than emitting unexpected types. No warning is current flagged for these cases which is probably not right.
+Attempts at type coercion which fail are similarly treated as if missing rather than emitting unexpected types. No warning is currently flagged for these cases which is probably not right.
 
 All significant actions, such as reconciliation attempts and results are logged to a `mapper.log` file. Errors are _also_ logged to stderr.
 
@@ -377,10 +391,10 @@ All significant actions, such as reconciliation attempts and results are logged 
 
 `subclassOf` and `subpropertyOf` are not implemented when extending imported ontology modules.
 
-Templates are not properly validated so misspelled directives may be silently ignored and missing or ill-formatted expected elements may generate mysterious errors messages.
+Templates are not yet properly validated so misspelled directives may be silently ignored and missing or ill-formatted expected elements may generate mysterious errors messages.
 
 Parsing of arguments and python fragments in transformers is fragile and should be replaced by a full grammar and lark parser.
 
-Lacks support for non-flat source json, though the embedded templates used to handle micro-parsing give a foundation for this.
+Support for non-flat json is limited to the use of `map_to` to apply embedded templates. Some free format use of dotted-paths to reference nested json might be more flexible.
 
-The `class` stanza is inconsistently named, should be `classes:`.
+The `class` stanza is inconsistently named, should be renamed `classes:`, though this part of the tooling is currently not used.

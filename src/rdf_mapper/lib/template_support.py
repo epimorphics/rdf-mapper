@@ -233,7 +233,8 @@ def process_resource_spec(name: str, rs: ResourceSpec, state: TemplateState) -> 
 
     # Check for switch of graph
     if rs.graph:
-        state = state.switch_to_graph(uri_expand(rs.graph, namespaces, state))
+        graph = uri_expand(rs.graph, namespaces, state)
+        state = state.switch_to_graph(graph, rs.preserved_graph)
 
     # If we have no URI assignment default to the row pattern
     id_template = rs.find_prop_defn("@id") or "<row>"
@@ -417,7 +418,7 @@ def asDateOrDatetime(s: str, state: TemplateState | None = None) -> Literal | No
             return None
 
 def asBoolean(s: str, state: TemplateState | None = None, *args) -> Literal:
-    if len(args):
+    if len(args) > 0:
         return Literal(s.lower() in [a.lower() for a in args], datatype=XSD.boolean)
     return Literal(s.lower() in ["yes", "true", "ok", "1"], datatype=XSD.boolean)
 
