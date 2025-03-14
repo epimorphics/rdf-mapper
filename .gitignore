@@ -1,5 +1,6 @@
 .idea
 venv
+.venv
 __pycache__
 mapper.log
 hse-full.ttl
@@ -8,3 +9,4 @@ hse-out.ttl
 .ruff_cache
 dist
 build
+.vscode

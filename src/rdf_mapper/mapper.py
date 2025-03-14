@@ -36,8 +36,8 @@ argparser.add_argument('outfile', nargs='?', type=argparse.FileType('w'), defaul
                        help='Optional output file, defaults to stdout')
 argparser.add_argument('--auto-declare', action='store_true',
                        help='Automatically declare new classes and properties')
-argparser.add_argument('--format', choices=['turtle', 'nquads', 'trig', 'update'], required=False, default='turtle',
-                        help='Output format: nquads, trig, or update')
+argparser.add_argument('--format', choices=['turtle', 'nquads', 'trig', 'update','delete'], required=False, default='turtle',
+                        help='Output format: nquads, trig, update, or delete')
 
 def main() -> None:
     args = argparser.parse_args()

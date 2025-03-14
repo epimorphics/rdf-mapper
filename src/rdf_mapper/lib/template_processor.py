@@ -51,9 +51,11 @@ class TemplateProcessor:
 
     def bind_namespaces(self) -> None:
         """Set the namespace prefixes for the dataset."""
-        nm = NamespaceManager(Graph(),
-                               # Suppress spurious namespaces
-                              bind_namespaces="core")
+        nm = NamespaceManager(
+            Graph(),
+            # Suppress spurious namespaces
+            bind_namespaces="core",
+        )
         self.dataset.namespace_manager = nm
         for ns, uri in self.spec.namespaces.items():
             nm.bind(ns, uri)
@@ -62,21 +64,45 @@ class TemplateProcessor:
     def write_as_update(self) -> None:
         """Write the current state of the dataset as a SPARQL update."""
         with self.output as out:
-            defgraph = self.dataset.graph(DEFAULT_GRAPH)
-            for ns, uri in defgraph.namespaces():
-                out.write(f"PREFIX {ns}: <{uri}>\n")
+            self._emit_prefixes(out)
             for g in self.dataset.graphs():
-                out.write("INSERT DATA {\n")
-                if g.identifier != DEFAULT_GRAPH_ID:
-                    out.write(f"GRAPH <{g.identifier}> {{\n")
-                for line in g.serialize(format="turtle").splitlines():
-                    if line.startswith("@prefix"):
-                        continue
-                    out.write(line)
-                    out.write("\n")
-                if g.identifier != DEFAULT_GRAPH_ID:
-                    out.write("}\n")
-                out.write("};\n")
+                if len(g) > 0:
+                    if g.identifier.toPython() not in self.state.preserved_graphs:
+                        out.write(f"DROP SILENT GRAPH <{g.identifier}> ;\n")
+                    out.write("INSERT DATA {\n")
+                    self._emit_graph(out, g)
+                    out.write("};\n")
+
+    def write_as_delete(self) -> None:
+        """Write the current state of the dataset as a SPARQL update which deletes non-preserved graphs,
+            and deletes triples from preserved graphs."""
+        with self.output as out:
+            if len(self.state.preserved_graphs) > 0:
+                self._emit_prefixes(out)
+            for g in self.dataset.graphs():
+                if len(g) > 0:
+                    if g.identifier.toPython() not in self.state.preserved_graphs:
+                        out.write(f"DROP SILENT GRAPH <{g.identifier}> ;\n")
+                    else:
+                        out.write("DELETE DATA {\n")
+                        self._emit_graph(out, g)
+                        out.write("};\n")
+
+    def _emit_prefixes(self, out:TextIO) -> None:
+        defgraph = self.dataset.graph(DEFAULT_GRAPH)
+        for ns, uri in defgraph.namespaces():
+            out.write(f"PREFIX {ns}: <{uri}>\n")
+
+    def _emit_graph(self, out:TextIO, g:Graph) -> None:
+        if g.identifier != DEFAULT_GRAPH_ID:
+            out.write(f"GRAPH <{g.identifier}> {{\n")
+        for line in g.serialize(format="turtle").splitlines():
+            if line.startswith("@prefix"):
+                continue
+            out.write(line)
+            out.write("\n")
+        if g.identifier != DEFAULT_GRAPH_ID:
+            out.write("}\n")
 
     def finalize(self, fmt: str) -> None:
         logging.info(f"Processed {self.row} lines")

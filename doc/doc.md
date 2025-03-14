@@ -11,7 +11,16 @@ Operation:
     mapper [--auto-declare] [--format=turtle] template input [output]
 ```
 
-Formats supported are `turtle` (default), `trig`, `nquads` and `update`. The latter writes a Sparql Update script for inserting data (in appropriate graphs is there are multiple graphs).
+Formats supported are `turtle` (default), `trig`, `nquads`, `update` and `delete`. 
+
+For the default format then the default graph is written out as `turtle`, if any of the templates target named graphs their output will be lost.
+
+With `update` format then a Sparql Update script is generated which can be used to update an existing dataset. All resources with a `@graph` will be written to the corresponding graph, replacing any existing content (the script will `DROP SILENT` all such graphs before inserting new data). Existing graph data can be preserved by using the `@graphAdd` directive instead.
+
+With `delete` format the data is transformed as normal but the output will be a Sparql Update script which will delete any `@graph`s and will delete the triples from any `@graphAdd` graphs. This allows a previous update to be removed instead of replaced. 
+
+> [!NOTE]
+> Care must be taken when using `delete` format with templates that include `@graphAdd`. Any bNodes generated in such preserved graphs will not be removed. Furthermore, any matching triples that had already been in the graph added to prior to the previous `update` will be removed and thus lost.
 
 If no output file is specified the transformed data will be written to stdout.
 
@@ -128,7 +137,8 @@ Resource definitions can have the following fields:
 | `name` | Short name for the resource. If using auto-generate then this will be the local name of the class URI and its `rdfs:label`. Also used for back references within templates. Required. |
 | `comment` | Descriptive comment, will be used as `rdfs:comment` on any auto generated class definition. |
 | `requires` | An optional dictionary mapping column names to the value required to be in that column for the resource mapping to be applied. If no value is provided, then the column is required to have any non-empty value.
-| `@graph` | Optional URI of a graph to which the resource template should be written. Can be a URI template. If not specified writes to the current `$graph` setting which defaults to the default graph |
+| `@graph` | Optional URI of a graph to which the resource template should be written. Can be a URI template. If not specified writes to the current `$graph` setting which defaults to the default graph. When using `update` format then any existing graph contents will be replaced. |
+| `@graphAdd` | As for `@graph` except that any existing graph contents will be preserved. |
 | `properties` | List of property/value templates defining the properties to attach to the generated resource |
 
 Entries in `one_offs` are identical to `resources` definitions, the difference is in their application, one offs are only generated once for the run and are a way to create static resources that the rows can refer to. 

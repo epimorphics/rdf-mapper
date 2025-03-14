@@ -2,7 +2,7 @@ import os
 import tempfile
 from io import StringIO
 
-from rdflib import Dataset
+from rdflib import Dataset, Literal, URIRef
 
 from rdf_mapper.lib.mapper_spec import MapperSpec
 from rdf_mapper.lib.template_processor import TemplateProcessor
@@ -24,7 +24,7 @@ class TestGraphs:
             }
         },{
             "name": "Current",
-            "@graph": "<http://example.com/current>",
+            "@graphAdd": "<http://example.com/current>",
             "properties": {
                 "@id": "<http://example.com/{id}>",
                 "<ex:latest_value>": "{value}"
@@ -58,15 +58,42 @@ class TestGraphs:
         actual = list(self.run_test().dataset.quads())
         assert sorted(self.load_expected_quads("graphs.trig")) == sorted(actual)
 
-    def test_update_serialization(self) -> None:
+    def _init_test_dataset(self) -> Dataset:
+        ds = Dataset()
+        base = ds.graph(URIRef("http://example.com/base"))
+        base.add((
+            URIRef("http://example.com/should_go"),
+            URIRef("http://example.com/p"),
+            Literal(42)
+        ))
+        current = ds.graph(URIRef("http://example.com/current"))
+        current.add((
+            URIRef("http://example.com/should_stay"),
+            URIRef("http://example.com/p"),
+            Literal("foo")
+        ))
+        return ds
+
+    def _generate_update(self, format: str) -> str:
         proc = self.run_test()
         with tempfile.TemporaryDirectory() as tmpdirname:
-            filename = f"{tmpdirname}/test.ru"
+            filename = f"{tmpdirname}/{format}.ru"
             proc.output = open(filename, "w")
-            proc.write_as_update()
+            if format == 'delete':
+                proc.write_as_delete()
+            else:
+                proc.write_as_update()
             with open(filename, "r") as result_file:
-                update = result_file.read()
-                ds = Dataset()
-                ds.update(update)
-                assert sorted(self.load_expected_quads("graphs.trig")) == sorted(list(ds.quads()))
+                return result_file.read()
 
+    def test_update(self) -> None:
+            update = self._generate_update("update")
+            delete = self._generate_update("delete")
+            ds = self._init_test_dataset()
+            ds.update(update)
+            expected = sorted(self.load_expected_quads("graphs-update.trig"))
+            assert expected == sorted(list(ds.quads()))
+
+            ds.update(delete)
+            expected = sorted(self.load_expected_quads("graphs-delete.trig"))
+            assert expected == sorted(list(ds.quads()))

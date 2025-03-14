@@ -1,0 +1,25 @@
+@prefix ex: <http://example.com/> .
+@prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#> .
+@prefix xsd: <http://www.w3.org/2001/XMLSchema#> .
+
+ex:base {
+    ex:12 rdfs:label "label1" ;
+        ex:value 42 .
+
+    ex:34 rdfs:label "label2" ;
+        ex:value 35 .
+
+    ex:56 rdfs:label "label3" ;
+        ex:value 451 .
+}
+
+ex:current {
+    ex:12 ex:latest_value 42 .
+
+    ex:34 ex:latest_value 35 .
+
+    ex:56 ex:latest_value 451 .
+
+    ex:should_stay ex:p "foo" .
+}
+

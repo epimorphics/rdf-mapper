@@ -37,11 +37,13 @@ class TemplateState:
     * $reconciliationAPI - API endpoint for reconciliation, may be global or for a specific property
     """
 
-    def __init__(self, context: ChainMap[str,Any], dataset: Dataset, spec: MapperSpec, reconcile_stack: dict = {}) -> None:
+    def __init__(self, context: ChainMap[str,Any], dataset: Dataset, spec: MapperSpec,
+                 preserved_graphs: set[str] = set(), reconcile_stack: dict = {}) -> None:
         self.spec = spec
         self.context = context
         self.dataset = dataset
         self.backlinks = {}
+        self.preserved_graphs = preserved_graphs
         self.reconcile_stack = reconcile_stack
         self.ensure_graph()
 
@@ -53,7 +55,8 @@ class TemplateState:
 
     def child(self, subcontext: dict) -> TemplateState:
         """Return a new template state which mirrors this but with additional temporary context bindings."""
-        child = TemplateState(self.context.new_child(subcontext), self.dataset, self.spec, self.reconcile_stack)
+        child = TemplateState(self.context.new_child(subcontext), self.dataset, self.spec,
+                              self.preserved_graphs, self.reconcile_stack)
         child.backlinks = self.backlinks
         return child
 
@@ -94,8 +97,10 @@ class TemplateState:
         if '$graph' not in self.context:
             self.context['$graph'] = DEFAULT_GRAPH
 
-    def switch_to_graph(self, graph: str) -> TemplateState:
+    def switch_to_graph(self, graph: str, preserve: bool) -> TemplateState:
         """Switch to a named graph, returns new temporary state."""
+        if preserve:
+            self.preserved_graphs.add(graph)
         return self.child({'$graph': graph})
 
     def current_graph(self) -> Graph:
