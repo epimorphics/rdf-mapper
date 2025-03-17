@@ -33,7 +33,7 @@ dev = ["rdf_mapper[test,docs,lint]"]
 
 [tool.setuptools.packages.find]
 where = ["src"]
-include = []
+include = ["rdf_mapper*"]
 
 [project.scripts]
 mapper = "rdf_mapper.mapper:run_main"
