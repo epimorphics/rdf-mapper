@@ -159,7 +159,7 @@ URI templates (which generate URI values) are mostly indicated by surrounding `<
 | `<prefix:local>` | A CURI, where `prefix` is a builtin or locally defined namespace and `local` gives a localname component which can include templated variables |
 | `<row>` | Generate a URI in the dataset data namespace based on the file name and row number |
 | `<uuid>` | Generate a URI in the dataset data namespace base on a UUID |
-| `<hash(col1,...,coln)>`| Generate a URI in the dataset data namespace based encoded hash of the values of the given columns |
+| `<hash(val1,...,valn)>`| Generate a URI in the dataset data namespace, using an encoded hash of the argument vaules. Each value to be hashed can be either a variable name (e.g. a column name from the data) or a literal string `'value'` |
 | `<parent>` | Generate a URI relative to the parent URI when processing an embedded template, the relative URI will use the resourceID and any list index if the embedded template is processing a list of values |
 | `<::name>` | Back reference to the URI of a previously generated resource with the given name |
 | `name` | Generate a URI in the dataset data namespace with localname `name`, this version, without `<...>` is only applicable in cases where the template is known to be a URI (`@id` or `@type`) |
