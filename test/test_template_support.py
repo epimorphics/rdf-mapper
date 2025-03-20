@@ -59,6 +59,12 @@ class TestTemplateSupport(unittest.TestCase):
         self.assertEqual(
             uri_expand("<hash(x, y)>", spec.namespaces, state),
             "https://epimorphics.com/datasets/testds/data/resty/H11TFU942OGHRQFBN5HVUJ72G4IP6A3O")
+        self.assertEqual(
+            uri_expand("<hash(x, 'bar')>", spec.namespaces, state),
+            "https://epimorphics.com/datasets/testds/data/resty/H11TFU942OGHRQFBN5HVUJ72G4IP6A3O")
+        self.assertEqual(
+            uri_expand("<hash(x, 'different')>", spec.namespaces, state),
+            "https://epimorphics.com/datasets/testds/data/resty/BHNVU5DCU1NSI7802JKRFBO7B7AJKVRC")
 
     def test_value_expand(self) -> None:
         spec = self._dummy_spec

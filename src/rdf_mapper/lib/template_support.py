@@ -92,7 +92,7 @@ def normalize(s: str) -> str:
 
 _CURI_PATTERN = re.compile(r"([_A-Za-z][\w\-\.]*):([\w\-\.]+)")
 _URI_PATTERN = re.compile(r"(https?|file|urn)://.*")   # TODO Support other schemes
-_HASH_PATTERN = re.compile(r"hash\s?\((.*)\)$")
+_HASH_PATTERN = re.compile(r"hash\s?\(([^)]*)\)$")
 _COMMA_SPLIT = re.compile(r"\s*,\s*")
 
 def uri_expand(pattern: str, namespaces: Mapping[str,str], state: TemplateState) -> str:
@@ -132,8 +132,10 @@ def uri_expand(pattern: str, namespaces: Mapping[str,str], state: TemplateState)
             params = _COMMA_SPLIT.split(params)
             _hash = hashlib.sha1()
             for p in params:
-                _p = p[1:-1] if p.startswith("'") and p.endswith("'") else p
-                _hash.update(bytes(str(state.get(_p)),"UTF-8"))
+                if p.startswith("'") and p.endswith("'"):
+                    _hash.update(bytes(p[1:-1],"UTF-8"))
+                else:
+                    _hash.update(bytes(str(state.get(p)),"UTF-8"))
             uriref = base64.b32hexencode(_hash.digest()).decode("UTF-8")
         else:
             uriref = pattern_expand(uriref, state)
