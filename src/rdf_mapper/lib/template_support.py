@@ -368,7 +368,7 @@ def register_fn(name: str, fn: Callable) -> None:
     """Add a named function to the register of operation that can be used in var processing chains."""
     _FUN_REGISTRY[name] = fn
 
-_CALL_PATTERN = re.compile(r"([\w]+)\s*\((.*)\)")
+_CALL_PATTERN = re.compile(r"([\w]+)\s*\((.*)\s*\)")
 
 def find_fn(call: str) -> Callable | None:
     """
@@ -381,8 +381,8 @@ def find_fn(call: str) -> Callable | None:
     if not fn:
         match = _CALL_PATTERN.fullmatch(call)
         if match:
-            fnname = match.group(1)
-            args = match.group(2)
+            fnname = match.group(1).strip()
+            args = match.group(2).strip()
             bindings: list[str] = []
             if len(args) > 0:
                 for arg in _COMMA_SPLIT.split(args):
