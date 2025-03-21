@@ -381,7 +381,15 @@ def find_fn(call: str) -> Callable | None:
     if not fn:
         match = _CALL_PATTERN.fullmatch(call)
         if match:
-            dfn = f"lambda value, state: {match.group(1)}(value, state,{match.group(2)})"
+            fnname = match.group(1)
+            args = match.group(2)
+            bindings: list[str] = []
+            for arg in _COMMA_SPLIT.split(args):
+                if not (arg.startswith("'") and arg.endswith("'")) or (arg.startswith('"') and arg.endswith('"')):
+                    bindings.append(f"state.get('{arg}') or {arg}")
+                else:
+                    bindings.append(arg)
+            dfn = f"lambda value, state: {fnname}(value, state, {','.join(bindings)})"
             fn = eval(dfn)
             # print(f"Registering {dfn}")
             register_fn(call, fn)
@@ -482,6 +490,14 @@ def map_by(data: str, state: TemplateState, mapping_name: str) -> term.Identifie
         return value[0]
     else:
         return value
+
+def hash(arg: str | None, state: TemplateState, *keys: str) -> str:  # noqa: A001
+    _hash = hashlib.sha1()
+    if arg:
+        _hash.update(bytes(arg,"UTF-8"))
+    for key in keys:
+        _hash.update(bytes(str(key),"UTF-8"))
+    return base64.b32hexencode(_hash.digest()).decode("UTF-8")
 
 _PROXY_CONCEPT_SPEC = {
     "properties" : {
