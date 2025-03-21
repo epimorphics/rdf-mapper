@@ -74,6 +74,9 @@ class TestTemplateSupport(unittest.TestCase):
         self.assertEqual(
             uri_expand("<http://example.com/{x|hash}/baz>", spec.namespaces, state),
             "http://example.com/1FNCFDFA7S7TNIAT1NA7UF2RO9QTL2HJ/baz")
+        self.assertEqual(
+            uri_expand("<http://example.com/{x|hash()}/baz>", spec.namespaces, state),
+            "http://example.com/1FNCFDFA7S7TNIAT1NA7UF2RO9QTL2HJ/baz")
 
     def test_value_expand(self) -> None:
         spec = self._dummy_spec

@@ -384,11 +384,12 @@ def find_fn(call: str) -> Callable | None:
             fnname = match.group(1)
             args = match.group(2)
             bindings: list[str] = []
-            for arg in _COMMA_SPLIT.split(args):
-                if not (arg.startswith("'") and arg.endswith("'")) or (arg.startswith('"') and arg.endswith('"')):
-                    bindings.append(f"state.get('{arg}') or {arg}")
-                else:
-                    bindings.append(arg)
+            if len(args) > 0:
+                for arg in _COMMA_SPLIT.split(args):
+                    if not (arg.startswith("'") and arg.endswith("'")) or (arg.startswith('"') and arg.endswith('"')):
+                        bindings.append(f"state.get('{arg}') or {arg}")
+                    else:
+                        bindings.append(arg)
             dfn = f"lambda value, state: {fnname}(value, state, {','.join(bindings)})"
             fn = eval(dfn)
             # print(f"Registering {dfn}")
