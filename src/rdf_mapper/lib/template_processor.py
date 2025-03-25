@@ -108,6 +108,8 @@ class TemplateProcessor:
         logging.info(f"Processed {self.row} lines")
         if fmt == "update":
             self.write_as_update()
+        elif fmt == "delete":
+            self.write_as_delete()
         else:
             with self.output as out:
                 out.write(self.dataset.serialize(format=fmt))
