@@ -79,10 +79,7 @@ class TestGraphs:
         with tempfile.TemporaryDirectory() as tmpdirname:
             filename = f"{tmpdirname}/{format}.ru"
             proc.output = open(filename, "w")
-            if format == 'delete':
-                proc.write_as_delete()
-            else:
-                proc.write_as_update()
+            proc.finalize(format)
             with open(filename, "r") as result_file:
                 return result_file.read()
 
