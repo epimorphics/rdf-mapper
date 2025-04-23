@@ -1,7 +1,5 @@
 # Mapping tool
 
-N.B. This is a proof-of-concept level tool only and not production ready.
-
 ## Overview
 
 Maps are expressed in (largely) declarative yaml and the mapper tool will process a CSV or jsonlines file generating turtle output.
