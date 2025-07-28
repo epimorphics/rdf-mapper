@@ -230,7 +230,7 @@ def process_resource_spec(name: str, rs: ResourceSpec, state: TemplateState) -> 
                         logging.warning(
                             f"Skipping resource {rs.name} on row {state.get('$row')} because value for {key} is {value}, which is not one of the required values {expected}.")  # noqa: E501
                         return None
-                if value != expected:
+                elif value != expected:
                     logging.warning(
                         f"Skipping resource {rs.name} on row {state.get('$row')} because value for {key} is {value}, which is different from the required value {expected}.")  # noqa: E501
                     return None
@@ -249,7 +249,7 @@ def process_resource_spec(name: str, rs: ResourceSpec, state: TemplateState) -> 
                         f"Skipping resource {rs.name} on row {state.get('$row')} because value for {key}  ({value}) is one of the filtered values {unless_value}."
                     )
                     return None
-            if value == unless_value:
+            elif value == unless_value:
                 logging.warning(
                     f"Skipping resource {rs.name} on row {state.get('$row')} because value for {key} is {value}."
                 )
