@@ -278,6 +278,36 @@ class TestTemplateProcessor(unittest.TestCase):
             [self.row1, self.row2], "unless_filter.ttl"
         )
 
+    def test_unless_none_filter(self) -> None:
+        self.do_test(
+            MapperSpec({
+                "resources": [{
+                    "name": "Test",
+                    "unless": { "x": None },
+                    "properties": {
+                        "@id" : "<http://example.com/{id}>",
+                        "@type" : "<http://example.com/File>",
+                    }
+                }]
+            }, auto_declare=False),
+            [self.row1, self.row2], "unless_filter.ttl"
+        )
+
+    def test_required_none_filter(self) -> None:
+        self.do_test(
+            MapperSpec({
+                "resources": [{
+                    "name": "Test",
+                    "requires": { "x": None },
+                    "properties": {
+                        "@id" : "<http://example.com/{id}>",
+                        "@type" : "<http://example.com/File>",
+                    }
+                }]
+            }, auto_declare=False),
+            [self.row1, self.row2], "required_filter.ttl"
+        )
+
     def test_unless_in_filter(self) -> None:
         self.do_test(
             MapperSpec({

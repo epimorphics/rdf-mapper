@@ -243,13 +243,18 @@ def process_resource_spec(name: str, rs: ResourceSpec, state: TemplateState) -> 
         for key in rs.unless:
             value = state.get(key)
             unless_value = rs.unless.get(key)
-            if type(unless_value) is list:
+            if unless_value is None and value is not None:
+                logging.warning(
+                    f"Skipping resource {rs.name} on row {state.get('$row')} because value for {key} is not empty."
+                )
+                return None
+            elif type(unless_value) is list:
                 if value in unless_value:
                     logging.warning(
                         f"Skipping resource {rs.name} on row {state.get('$row')} because value for {key}  ({value}) is one of the filtered values {unless_value}."
                     )
                     return None
-            elif value == unless_value:
+            elif unless_value is not None and value == unless_value:
                 logging.warning(
                     f"Skipping resource {rs.name} on row {state.get('$row')} because value for {key} is {value}."
                 )
