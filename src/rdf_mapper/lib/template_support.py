@@ -225,12 +225,34 @@ def process_resource_spec(name: str, rs: ResourceSpec, state: TemplateState) -> 
             value = state.get(key)
             expected = rs.requires.get(key)
             if expected is not None:
-                if value != expected:
+                if type(expected) is list:
+                    if value not in expected:
+                        logging.warning(
+                            f"Skipping resource {rs.name} on row {state.get('$row')} because value for {key} is {value}, which is not one of the required values {expected}.")  # noqa: E501
+                        return None
+                elif value != expected:
                     logging.warning(
                         f"Skipping resource {rs.name} on row {state.get('$row')} because value for {key} is {value}, which is different from the required value {expected}.")  # noqa: E501
                     return None
             elif not value:
                 logging.warning(f"Skipping resource {rs.name} on row {state.get('$row')} because value for {key} is empty.")
+                return None
+
+    # If the resource spec has an unless dict, check the row for non-matching values
+    if rs.unless:
+        for key in rs.unless:
+            value = state.get(key)
+            unless_value = rs.unless.get(key)
+            if type(unless_value) is list:
+                if value in unless_value:
+                    logging.warning(
+                        f"Skipping resource {rs.name} on row {state.get('$row')} because value for {key}  ({value}) is one of the filtered values {unless_value}."
+                    )
+                    return None
+            elif value == unless_value:
+                logging.warning(
+                    f"Skipping resource {rs.name} on row {state.get('$row')} because value for {key} is {value}."
+                )
                 return None
 
     # Check for switch of graph

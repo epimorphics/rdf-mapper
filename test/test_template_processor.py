@@ -232,6 +232,67 @@ class TestTemplateProcessor(unittest.TestCase):
             }, auto_declare=False),
             [self.row1], "map_by.ttl" )
 
+    def test_required_filter(self) -> None:
+        self.do_test(
+            MapperSpec({
+                "resources": [{
+                    "name": "Test",
+                    "requires": { "id": "123" },
+                    "properties": {
+                        "@id" : "<http://example.com/{id}>",
+                        "@type" : "<http://example.com/File>",
+                    }
+                }]
+            }, auto_declare=False),
+            [self.row1, self.row2], "required_filter.ttl"
+        )
+
+    def test_required_in_filter(self) -> None:
+        self.do_test(
+        MapperSpec({
+            "resources": [{
+                "name": "Test",
+                "requires": {"id": ["123", "789"]},
+                "properties": {
+                    "@id": "<http://example.com/{id}>",
+                    "@type": "<http://example.com/File>",
+                }
+            }]
+        }, auto_declare=False),
+        [self.row1, self.row2],
+        "required_filter.ttl"
+        )
+
+    def test_unless_filter(self) -> None:
+        self.do_test(
+            MapperSpec({
+                "resources": [{
+                    "name": "Test",
+                    "unless": { "id": "123" },
+                    "properties": {
+                        "@id" : "<http://example.com/{id}>",
+                        "@type" : "<http://example.com/File>",
+                    }
+                }]
+            }, auto_declare=False),
+            [self.row1, self.row2], "unless_filter.ttl"
+        )
+
+    def test_unless_in_filter(self) -> None:
+        self.do_test(
+            MapperSpec({
+                "resources": [{
+                    "name": "Test",
+                    "unless": { "id": ["123", "789"]},
+                    "properties": {
+                        "@id" : "<http://example.com/{id}>",
+                        "@type" : "<http://example.com/File>",
+                    }
+                }]
+            }, auto_declare=False),
+            [self.row1, self.row2, self.row3], "unless_filter.ttl"
+        )
+
 
     def do_test(self, spec: MapperSpec, rows: list, expected: str | None) -> None:
         self.maxDiff = 5000

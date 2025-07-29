@@ -203,6 +203,7 @@ class ResourceSpec:
             self.preserved_graph = "@graphAdd" in spec
             self.properties = _listify(props)
             self.requires = spec.get("requires")
+            self.unless = spec.get("unless")
             if self.requires is not None and not isinstance(self.requires, dict):
                 _error(f"Resource spec requires must be a dictionary, was {self.requires}")
         else:

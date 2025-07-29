@@ -1,0 +1,3 @@
+
+<http://example.com/123> a <http://example.com/File> .
+
