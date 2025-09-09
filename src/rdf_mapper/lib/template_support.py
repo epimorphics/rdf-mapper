@@ -305,7 +305,10 @@ def process_property_value(resource: IdentifiedNode, prop: str, template: Any, s
     if isinstance(template, list):
         # Multiple expansions defined for this property
         for template_item in template:
-            process_property_value(resource, prop, template_item, state)
+            try:
+                process_property_value(resource, prop, template_item, state)
+            except ValueError as ex:
+                logging.warning(f"Skipping {prop} on row {state.get('$row')} because {ex}")
         return
 
     # Check for inverse property

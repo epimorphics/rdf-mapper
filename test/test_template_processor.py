@@ -71,6 +71,22 @@ class TestTemplateProcessor(unittest.TestCase):
             }),
             [self.row1], "skip_missing.ttl")
 
+    def test_skip_missing_in_list(self) -> None:
+        self.do_test(
+             MapperSpec({
+                "globals": {"$datasetID": "testds"},
+                "namespaces" : { "def" : "https://epimorphics.com/library/def/" },
+                "resources" : [{
+                    "name": "registration",
+                    "properties": {
+                        "@id" : "<http://example.com/{$row}>",
+                        "@type" : "<skos:Concept>",
+                        "<def:missing>" : ["{missing}", "{id}"]
+                    }
+                }]
+            }),
+            [self.row1], "skip_missing_in_list.ttl")
+
     def test_inverse_prop(self) -> None:
         self.do_test(
              MapperSpec({

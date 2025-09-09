@@ -1,0 +1,6 @@
+@prefix def: <https://epimorphics.com/library/def/> .
+@prefix skos: <http://www.w3.org/2004/02/skos/core#> .
+
+<http://example.com/1> a skos:Concept ;
+    def:missing "123" .
+
