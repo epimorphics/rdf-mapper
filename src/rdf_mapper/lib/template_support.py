@@ -420,7 +420,12 @@ def find_fn(call: str) -> Callable | None:
                         bindings.append(f"state.get('{arg}') or {arg}")
                     else:
                         bindings.append(arg)
-            dfn = f"lambda value, state: {fnname}(value, state, {','.join(bindings)})"
+            if fnname in _FUN_REGISTRY:
+                # When the function is in the registry it needs to be invoked using the __call__ method
+                dfn = f"lambda value, state: _FUN_REGISTRY['{fnname}'].__call__(value, state, {', '.join(bindings)})"
+            else:
+                # Global functions can be invoked directly
+                dfn = f"lambda value, state: {fnname}(value, state, {','.join(bindings)})"
             fn = eval(dfn)
             # print(f"Registering {dfn}")
             register_fn(call, fn)
