@@ -297,6 +297,8 @@ def process_resource_spec(name: str, rs: ResourceSpec, state: TemplateState) -> 
             if prop != "<rdfs:comment>":
                 # The rdfs:comment guard is a kludge to reduce noise when auto declaring properties and classes
                 logging.warning(f"Skipping {prop} on row {state.get('$row')} because {ex}")
+        except Exception as err:
+            raise ValueError(f"Failed to process property {prop} on row {state.get('$row')}: {err}") from err
     return resource
 
 def process_property_value(resource: IdentifiedNode, prop: str, template: Any, state: TemplateState) -> None:
@@ -445,14 +447,20 @@ def asDecimal(s: str, state: TemplateState | None = None) -> Literal | None:
     return Literal(s, datatype=XSD.decimal) if s else None
 
 def asDateTime(s: str, state: TemplateState | None = None) -> Literal | None:
+    if s is None:
+        return None
     dt = dateparser.parse(s)
     return Literal(dt.isoformat(), datatype=XSD.dateTime) if dt else None
 
 def asDate(s: str, state: TemplateState | None = None) -> Literal | None:
+    if s is None:
+        return None
     dt = dateparser.parse(s)
     return Literal(dt.date().isoformat(), datatype=XSD.date) if dt else None
 
 def asDateOrDatetime(s: str, state: TemplateState | None = None) -> Literal | None:
+    if s is None:
+        return None
     if re.fullmatch(r"[12]\d{3}", s):
         return Literal(f'{s}-01-01', datatype=XSD.date)
     else:
@@ -480,10 +488,10 @@ def toUpper(s: str, state: TemplateState | None = None) -> str | None:
     return s.upper() if s else None
 
 def splitComma(s: str, state: TemplateState | None = None) -> list:
-    return _COMMA_SPLIT.split(s)
+    return _COMMA_SPLIT.split(s) if s else []
 
 def split(s: str, state: TemplateState, reg: str) -> list:
-    return re.split(reg, s)
+    return re.split(reg, s) if s else []
 
 _EXPR_CACHE: dict[str, Any] = {}
 

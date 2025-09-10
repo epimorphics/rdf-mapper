@@ -44,7 +44,10 @@ class TemplateProcessor:
                 if not rspec.name:
                     logging.error(f"Resource has no name {rspec}")
                 else:
-                    process_resource_spec(rspec.name, rspec, state)
+                    try:
+                        process_resource_spec(rspec.name, rspec, state)
+                    except Exception as resource_spec_error:
+                        logging.error(f"Failed to process resource {rspec.name} on row {self.row}: {resource_spec_error}")
         except Exception as err:
             logging.error(f"Failure on row {self.row} with {err}")
         return self.dataset
