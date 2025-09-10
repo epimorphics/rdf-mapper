@@ -234,9 +234,11 @@ def process_resource_spec(name: str, rs: ResourceSpec, state: TemplateState) -> 
                     logging.warning(
                         f"Skipping resource {rs.name} on row {state.get('$row')} because value for {key} is {value}, which is different from the required value {expected}.")  # noqa: E501
                     return None
-            elif not value:
-                logging.warning(f"Skipping resource {rs.name} on row {state.get('$row')} because value for {key} is empty.")
+            elif value is None:
+                logging.warning(f"Skipping resource {rs.name} on row {state.get('$row')} because there is no value for {key}.")
                 return None
+            elif value == '':
+                logging.warning(f"Skipping resource {rs.name} on row {state.get('$row')} because value for {key} is an empty string.")
 
     # If the resource spec has an unless dict, check the row for non-matching values
     if rs.unless:
