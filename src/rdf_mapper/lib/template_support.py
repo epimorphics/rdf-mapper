@@ -239,6 +239,7 @@ def process_resource_spec(name: str, rs: ResourceSpec, state: TemplateState) -> 
                 return None
             elif value == '':
                 logging.warning(f"Skipping resource {rs.name} on row {state.get('$row')} because value for {key} is an empty string.")
+                return None
 
     # If the resource spec has an unless dict, check the row for non-matching values
     if rs.unless:
