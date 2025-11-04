@@ -125,6 +125,10 @@ class TestTemplateSupport(unittest.TestCase):
         self.assertEqual(asBoolean("no"), Literal(False, datatype=XSD.boolean))
         self.assertEqual(asBoolean("false"), Literal(False, datatype=XSD.boolean))
         self.assertEqual(asBoolean("0"), Literal(False, datatype=XSD.boolean))
+        self.assertEqual(asBoolean("y", None, "y"), Literal(True, datatype=XSD.boolean))
+        self.assertEqual(asBoolean("Y", None, "y"), Literal(True, datatype=XSD.boolean))
+        self.assertEqual(asBoolean("n", None, "y"), Literal(False, datatype=XSD.boolean))
+        self.assertEqual(asBoolean("N", None, "y"), Literal(False, datatype=XSD.boolean))
 
     def test_fn_call(self) -> None:
         state = self._mkcontext({

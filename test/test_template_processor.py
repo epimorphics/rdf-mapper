@@ -11,6 +11,7 @@ class TestTemplateProcessor(unittest.TestCase):
             "label" : "label1"}
     row2 = {"$row": 2, "$file": "file", "id": "456", "label" : "label2"}
     row3 = {"$row": 3, "$file": "file", "id": "789", "label" : "label1"}
+    row4 = {"$row": 4, "$file": "file", "id": "444", "flag" : "n"}
 
     def test_default_mapping(self) -> None:
         self.do_test(
@@ -339,6 +340,20 @@ class TestTemplateProcessor(unittest.TestCase):
             [self.row1, self.row2, self.row3], "unless_filter.ttl"
         )
 
+    def test_asBoolean_producing_false(self):
+        self.do_test(
+            MapperSpec({
+                "resources": [{
+                    "name": "Test",
+                    "properties": {
+                        "@id": "<http://example.com/{id}>",
+                        "p": "{flag|asBoolean('y')}"
+                    }
+                }]
+            }, auto_declare=False),
+            [{"id": "123", "flag": "n"},{"id": "456", "flag": "y"}],
+            "asBoolean_producing_false.ttl"
+        )
 
     def do_test(self, spec: MapperSpec, rows: list, expected: str | None) -> None:
         self.maxDiff = 5000
