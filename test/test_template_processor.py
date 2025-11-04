@@ -307,7 +307,12 @@ class TestTemplateProcessor(unittest.TestCase):
                     }
                 }]
             }, auto_declare=False),
-            [self.row1, self.row2], "unless_filter.ttl"
+            [
+                self.row1,
+                self.row2,
+                {"$row": 3, "$file": "file", "id": "789", "x": "", "label": "label1"}
+            ],
+            "unless_none_filter.ttl"
         )
 
     def test_required_none_filter(self) -> None:
