@@ -245,8 +245,11 @@ def process_resource_spec(name: str, rs: ResourceSpec, state: TemplateState) -> 
     if rs.unless:
         for key in rs.unless:
             value = state.get(key)
+            if type(value) is str and value.strip() == "":
+                # Treat empty columns / empty string values as undefined values for the purpose of unless
+                value = None
             unless_value = rs.unless.get(key)
-            if unless_value is None and value is not None and value != '':
+            if unless_value is None and value is not None:
                 logging.warning(
                     f"Skipping resource {rs.name} on row {state.get('$row')} because value for {key} is not empty."
                 )

@@ -10,7 +10,7 @@ class TestTemplateProcessor(unittest.TestCase):
             "croplink" : [{"crop" : "barley", "qualifier": "winter"}],
             "label" : "label1"}
     row2 = {"$row": 2, "$file": "file", "id": "456", "label" : "label2"}
-    row3 = {"$row": 3, "$file": "file", "id": "789", "label" : "label1", "x": ""}
+    row3 = {"$row": 3, "$file": "file", "id": "789", "label" : "label1"}
     row4 = {"$row": 4, "$file": "file", "id": "444", "flag" : "n"}
 
     def test_default_mapping(self) -> None:
@@ -307,7 +307,12 @@ class TestTemplateProcessor(unittest.TestCase):
                     }
                 }]
             }, auto_declare=False),
-            [self.row1, self.row2, self.row3], "unless_filter.ttl"
+            [
+                self.row1,
+                self.row2,
+                {"$row": 3, "$file": "file", "id": "789", "x": "", "label": "label1"}
+            ],
+            "unless_none_filter.ttl"
         )
 
     def test_required_none_filter(self) -> None:
