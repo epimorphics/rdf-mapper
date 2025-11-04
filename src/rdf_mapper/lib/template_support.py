@@ -76,7 +76,7 @@ def valueof_var(var: str, state: TemplateState) -> Any:
                 val = fn(val, state)
         else:
             raise ValueError(f"Could not find function {fnname}")
-    if not val:
+    if val is None:
         raise ValueError(f"could not find value for '{varname}'")
     return val
 

@@ -1,0 +1,7 @@
+@prefix def: <https://epimorphics.com/datasets/None/def/> .
+@prefix xsd: <http://www.w3.org/2001/XMLSchema#> .
+
+<http://example.com/123> def:p false .
+
+<http://example.com/456> def:p true .
+
