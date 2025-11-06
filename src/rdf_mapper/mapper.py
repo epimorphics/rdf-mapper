@@ -16,14 +16,16 @@ def process_jsonlines(file:TextIO, processor:TemplateProcessor, fmt: str) -> Non
         for line in file:
             data = json.loads(line)
             processor.process_row(data)
-    processor.finalize(fmt)
+    if not processor.finalize(fmt):
+        sys.exit(1)
 
 def process_csv(file:TextIO, processor:TemplateProcessor, fmt: str)  -> None:
     with(file):
         reader = csv.DictReader(file)
         for row in reader:
             processor.process_row(row)
-    processor.finalize(fmt)
+    if not processor.finalize(fmt):
+        sys.exit(1)
 
 argparser = argparse.ArgumentParser(
     description='Transform and reconcile csv or jsonlines file based on a mapping template'
@@ -38,6 +40,8 @@ argparser.add_argument('--auto-declare', action='store_true',
                        help='Automatically declare new classes and properties')
 argparser.add_argument('--format', choices=['turtle', 'nquads', 'trig', 'update','delete'], required=False, default='turtle',
                         help='Output format: nquads, trig, update, or delete')
+argparser.add_argument('--abort-on-error', action='store_true',
+                       help='Abort processing if an error was encountered, but process all rows to collect errors first')
 
 def main() -> None:
     args = argparser.parse_args()

@@ -6,7 +6,7 @@ Maps are expressed in (largely) declarative yaml and the mapper tool will proces
 
 Operation:
 ```
-    mapper [--auto-declare] [--format=turtle] template input [output]
+    mapper [--auto-declare] [--format=turtle] [--abort-on-error] template input [output]
 ```
 
 Formats supported are `turtle` (default), `trig`, `nquads`, `update` and `delete`. 
@@ -21,6 +21,8 @@ With `delete` format the data is transformed as normal but the output will be a 
 > Care must be taken when using `delete` format with templates that include `@graphAdd`. Any bNodes generated in such preserved graphs will not be removed. Furthermore, any matching triples that had already been in the graph added to prior to the previous `update` will be removed and thus lost.
 
 If no output file is specified the transformed data will be written to stdout.
+
+The `--abort-on-error` flag will prevent any output being generated but the mapper will still process the whole input (so as to find all errors) then exit with an error status.
 
 Non-fatal warnings will be logged to stderr and to `mapper.log`.
 
