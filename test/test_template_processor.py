@@ -363,7 +363,7 @@ class TestTemplateProcessor(unittest.TestCase):
     def do_test(self, spec: MapperSpec, rows: list, expected: str | None) -> None:
         self.maxDiff = 5000
         output = StringIO("")
-        proc = TemplateProcessor(spec, "test", output)
+        proc = TemplateProcessor(spec, "test", output, abort_on_error=False)
         for row in rows:
             proc.process_row(row)
         proc.bind_namespaces()
@@ -372,6 +372,24 @@ class TestTemplateProcessor(unittest.TestCase):
             print(result)
         else:
             self.assertEqual(load_expected(expected), result)
+
+    def test_abort_on_error(self) -> None:
+        spec = MapperSpec({
+            "resources": [{
+                "name": "Test",
+                "properties": {
+                    "@id": "<http://example.com/{id}>",
+                    "p": "{label|asInt}"
+                }
+            }]
+        }, auto_declare=False)
+        output = StringIO("")
+        proc = TemplateProcessor(spec, "test", output, abort_on_error=True)
+        for row in [self.row2, self.row3]:
+            proc.process_row(row)
+        self.assertEqual(proc.error_count, 2)
+        self.assertEqual(proc.row, 2)
+        self.assertEqual(len(output.getvalue()), 0)  # No output written due to abort on error
 
 def load_expected(name: str) -> str:
     with open(f"test/expected/{name}", 'r', encoding='utf-8') as file:

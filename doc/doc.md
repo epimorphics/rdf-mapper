@@ -6,7 +6,7 @@ Maps are expressed in (largely) declarative yaml and the mapper tool will proces
 
 Operation:
 ```
-    mapper [--auto-declare] [--format=turtle] template input [output]
+    mapper [--auto-declare] [--format=turtle] [--abort-on-error] template input [output]
 ```
 
 Formats supported are `turtle` (default), `trig`, `nquads`, `update` and `delete`. 
@@ -22,7 +22,9 @@ With `delete` format the data is transformed as normal but the output will be a 
 
 If no output file is specified the transformed data will be written to stdout.
 
-Non-fatal warnings will be logged to stderr and to `mapper.log`.
+With the `--abort-on-error` flag set, any errors that occur will prevent output being generated but the mapper will still process the whole input (so as to find all errors) then exit with an error status.
+
+Errors and warnings will be logged to stderr and to `mapper.log`.
 
 Key features: 
 

@@ -300,7 +300,10 @@ def process_resource_spec(name: str, rs: ResourceSpec, state: TemplateState) -> 
         except ValueError as ex:
             if prop != "<rdfs:comment>":
                 # The rdfs:comment guard is a kludge to reduce noise when auto declaring properties and classes
-                logging.warning(f"Skipping {prop} on row {state.get('$row')} because {ex}")
+                if state.abort_on_error:
+                    raise ValueError(f"Failed to process property {prop} on row {state.get('$row')}: {ex}") from ex
+                else:
+                    logging.warning(f"Skipping {prop} on row {state.get('$row')} because {ex}")
         except Exception as err:
             raise ValueError(f"Failed to process property {prop} on row {state.get('$row')}: {err}") from err
     return resource
@@ -316,7 +319,10 @@ def process_property_value(resource: IdentifiedNode, prop: str, template: Any, s
             try:
                 process_property_value(resource, prop, template_item, state)
             except ValueError as ex:
-                logging.warning(f"Skipping {prop} on row {state.get('$row')} because {ex}")
+                if state.abort_on_error:
+                    raise ValueError(f"Failed to process property {prop} on row {state.get('$row')}: {ex}") from ex
+                else:
+                    logging.warning(f"Skipping {prop} on row {state.get('$row')} because {ex}") 
         return
 
     # Check for inverse property
