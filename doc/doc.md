@@ -22,9 +22,9 @@ With `delete` format the data is transformed as normal but the output will be a 
 
 If no output file is specified the transformed data will be written to stdout.
 
-The `--abort-on-error` flag will prevent any output being generated but the mapper will still process the whole input (so as to find all errors) then exit with an error status.
+With the `--abort-on-error` flag set, any errors that occur will prevent output being generated but the mapper will still process the whole input (so as to find all errors) then exit with an error status.
 
-Non-fatal warnings will be logged to stderr and to `mapper.log`.
+Errors and warnings will be logged to stderr and to `mapper.log`.
 
 Key features: 
 
