@@ -373,7 +373,7 @@ class TestTemplateProcessor(unittest.TestCase):
         else:
             self.assertEqual(load_expected(expected), result)
 
-    def test_abort_on_error(self) -> None:
+    def test_error_raised_when_abort_on_error(self) -> None:
         spec = MapperSpec({
             "resources": [{
                 "name": "Test",
@@ -385,10 +385,14 @@ class TestTemplateProcessor(unittest.TestCase):
         }, auto_declare=False)
         output = StringIO("")
         proc = TemplateProcessor(spec, "test", output, abort_on_error=True)
-        for row in [self.row2, self.row3]:
-            proc.process_row(row)
+
+        with self.assertRaises(ValueError) as context:
+            for row in [self.row2, self.row3]:
+                proc.process_row(row)
+
+        self.assertIn("Failed to process property p on row 2: could not convert string to float: 'label2'", str(context.exception))
         self.assertEqual(proc.error_count, 2)
-        self.assertEqual(proc.row, 2)
+        self.assertEqual(proc.row, 1)  # Processing stopped after first error
         self.assertEqual(len(output.getvalue()), 0)  # No output written due to abort on error
 
 def load_expected(name: str) -> str:

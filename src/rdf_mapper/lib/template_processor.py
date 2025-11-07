@@ -53,8 +53,10 @@ class TemplateProcessor:
                         process_resource_spec(rspec.name, rspec, state)
                     except Exception as resource_spec_error:
                         self.log_error(f"failed to process resource {rspec.name}: {resource_spec_error}")
+                        if self.abort_on_error: raise resource_spec_error
         except Exception as err:
             self.log_error(f"processing failed with {err}")
+            if self.abort_on_error: raise err
         return self.dataset
 
     def bind_namespaces(self) -> None:
