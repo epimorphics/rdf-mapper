@@ -386,13 +386,15 @@ class TestTemplateProcessor(unittest.TestCase):
         output = StringIO("")
         proc = TemplateProcessor(spec, "test", output, abort_on_error=True)
 
-        with self.assertRaises(ValueError) as context:
-            for row in [self.row2, self.row3]:
-                proc.process_row(row)
+        for row in [self.row2, self.row3]:
+            proc.process_row(row)
 
-        self.assertIn("Failed to process property p on row 2: could not convert string to float: 'label2'", str(context.exception))
-        self.assertEqual(proc.error_count, 2)
-        self.assertEqual(proc.row, 1)  # Processing stopped after first error
+        with self.assertRaises(RuntimeError) as context:
+            proc.finalize("update")
+
+        self.assertIn("Aborting due to 3 errors", str(context.exception))
+        self.assertEqual(proc.error_count, 3)
+        self.assertEqual(proc.row, 2)  # Processing stopped after first error
         self.assertEqual(len(output.getvalue()), 0)  # No output written due to abort on error
 
 def load_expected(name: str) -> str:
