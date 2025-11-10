@@ -16,15 +16,21 @@ def process_jsonlines(file:TextIO, processor:TemplateProcessor, fmt: str) -> Non
         for line in file:
             data = json.loads(line)
             processor.process_row(data)
-    if not processor.finalize(fmt):
-        sys.exit(1)
+    finalize_output(processor, fmt)
 
 def process_csv(file:TextIO, processor:TemplateProcessor, fmt: str)  -> None:
     with(file):
         reader = csv.DictReader(file)
         for row in reader:
             processor.process_row(row)
-    if not processor.finalize(fmt):
+    finalize_output(processor, fmt)
+
+def finalize_output(processor:TemplateProcessor, fmt: str) -> None:
+    try:
+        success = processor.finalize(fmt)
+        if not success:
+            sys.exit(1)
+    except RuntimeError as e:
         sys.exit(1)
 
 argparser = argparse.ArgumentParser(

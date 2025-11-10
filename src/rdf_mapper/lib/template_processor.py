@@ -121,7 +121,7 @@ class TemplateProcessor:
         if self.error_count > 0:
             if self.abort_on_error:
                 self.log_error(f"Aborting due to {self.error_count} errors")
-                return False
+                raise RuntimeError(f"Aborting due to {self.error_count} errors")
             else:
                 logging.info(f"Completed with {self.error_count} errors, skipping those rows")
         if fmt == "update":
