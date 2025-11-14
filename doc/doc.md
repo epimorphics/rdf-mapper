@@ -383,9 +383,10 @@ imports:
 
 ## Logging and errors
 
-Missing property values are not treated as a errors, the corresponding property is simply omitted.
+Missing property values are not treated as errors, the corresponding property is simply omitted.
 
-Attempts at type coercion which fail are similarly treated as if missing rather than emitting unexpected types. No warning is currently flagged for these cases which is probably not right.
+Functions / function chains that return None are treated as if missing rather than as an error.
+If a function throws an error, this will be treated as an error.
 
 All significant actions, such as reconciliation attempts and results are logged to a `mapper.log` file. Errors are _also_ logged to stderr.
 
