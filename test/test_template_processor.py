@@ -397,6 +397,26 @@ class TestTemplateProcessor(unittest.TestCase):
         self.assertEqual(proc.row, 2)  # Processing stopped after first error
         self.assertEqual(len(output.getvalue()), 0)  # No output written due to abort on error
 
+    def test_no_abort_when_value_missing(self) -> None:
+        spec = MapperSpec({
+            "resources": [{
+                "name": "Test",
+                "properties": {
+                    "@id": "<http://example.com/{id}>",
+                    "p": "{label}"
+                }
+            }]
+        }, auto_declare=False)
+        output = StringIO("")
+        proc = TemplateProcessor(spec, "test", output, abort_on_error=True)
+
+        for row in [self.row3, self.row4]:
+            proc.process_row(row)
+
+        proc.finalize("update")
+        self.assertEqual(proc.error_count, 0)
+
+
 def load_expected(name: str) -> str:
     with open(f"test/expected/{name}", 'r', encoding='utf-8') as file:
         return file.read()
