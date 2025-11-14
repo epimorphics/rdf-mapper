@@ -66,7 +66,8 @@ class TestTemplateProcessor(unittest.TestCase):
                         "@type" : "<skos:Concept>",
                         "<def:p>" : "{id | asInt}",
                         "<def:missing>" : "{missing}",
-                        "<def:missing2>" : "{missing}@en"
+                        "<def:missing2>" : "{missing}@en",
+                        "<def:missing3>" : "{missing|asInt}"
                     }
                 }]
             }),
