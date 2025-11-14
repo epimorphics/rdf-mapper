@@ -18,7 +18,7 @@ dependencies = [
     "urllib3 == 2.3.0"
 ]
 name = "rdf_mapper"
-version = "0.2.2"
+version = "0.2.3"
 description = "Simple CSV/JSON to RDF mapper"
 authors = [
     { name = "Dave Reynolds", email = "dave.reynolds@epimorphics.com" },

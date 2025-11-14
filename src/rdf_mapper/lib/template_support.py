@@ -27,6 +27,10 @@ from rdf_mapper.lib.template_state import ReconciliationRecord, TemplateState
 
 _VARPATTERN = re.compile(r"{([^}]*)}")
 
+class MissingValueWarning(RuntimeWarning):
+    def __init__(self, message: str) -> None:
+        super().__init__(message)
+
 def pattern_expand(template: str, state: TemplateState) -> str:
     """Return template with var references {var} expanded from the given dict-like context.
 
@@ -77,7 +81,7 @@ def valueof_var(var: str, state: TemplateState) -> Any:
         else:
             raise ValueError(f"Could not find function {fnname}")
     if val is None or val == "":
-        raise ValueError(f"could not find value for '{varname}'")
+        raise MissingValueWarning(f"Could not find value {varname}")
     return val
 
 _POOR_URI_CHARS = re.compile(r"[^\w\-]+")
@@ -297,6 +301,8 @@ def process_resource_spec(name: str, rs: ResourceSpec, state: TemplateState) -> 
     for (prop, template) in rs.properties:
         try:
             process_property_value(resource, prop, template, state)
+        except MissingValueWarning as warn:
+            logging.warning(f"Skipping {prop} on row {state.get('$row')}: {warn}")
         except ValueError as ex:
             if prop != "<rdfs:comment>":
                 # The rdfs:comment guard is a kludge to reduce noise when auto declaring properties and classes
@@ -318,6 +324,8 @@ def process_property_value(resource: IdentifiedNode, prop: str, template: Any, s
         for template_item in template:
             try:
                 process_property_value(resource, prop, template_item, state)
+            except MissingValueWarning as warn:
+                logging.warning(f"Skipping {prop} on row {state.get('$row')}: {warn}")
             except ValueError as ex:
                 if state.abort_on_error:
                     raise ValueError(f"Failed to process property {prop} on row {state.get('$row')}: {ex}") from ex
