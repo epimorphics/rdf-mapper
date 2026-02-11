@@ -13,6 +13,8 @@ from rdf_mapper.lib.template_support import (
     pattern_expand,
     uri_expand,
     value_expand,
+    asDecimal,
+    asInt
 )
 
 
@@ -107,6 +109,25 @@ class TestTemplateSupport(unittest.TestCase):
             value_expand("{list | splitComma}", spec.namespaces, state),
             [Literal("foo"), Literal("bar")])
 
+    def test_ints(self):
+        self.assertEqual(asInt("1"), Literal("1", datatype=XSD.integer))
+        self.assertEqual(asInt(1), Literal("1", datatype=XSD.integer))
+        self.assertEqual(asInt(1.0), Literal("1", datatype=XSD.integer))
+        self.assertEqual(asInt(1.23), Literal("1", datatype=XSD.integer))
+        self.assertEqual(asInt(float(1.99)), Literal("1", datatype=XSD.integer))
+        self.assertIsNone(asInt(None))
+        self.assertIsNone(asInt(""))
+        self.assertEqual(asInt(0), Literal("0", datatype=XSD.integer))
+        self.assertEqual(asInt(float(0.0)), Literal("0", datatype=XSD.integer))
+
+    def test_decimals(self) -> None:
+        self.assertEqual(asDecimal("1"), Literal("1.0", datatype=XSD.decimal))
+        self.assertEqual(asDecimal("1.0"), Literal("1.0", datatype=XSD.decimal))
+        self.assertEqual(asDecimal(1), Literal("1.0", datatype=XSD.decimal))
+        self.assertEqual(asDecimal(float(1.23)), Literal("1.23", datatype=XSD.decimal))
+        self.assertEqual(asDecimal(0), Literal("0.0", datatype=XSD.decimal))
+        self.assertIsNone(asDecimal(None))
+
     def test_dates(self) -> None:
         self.assertEqual(asDate("2023-05-18"), Literal("2023-05-18", datatype=XSD.date))
         self.assertEqual(asDate("18 May 2023"), Literal("2023-05-18", datatype=XSD.date))
@@ -116,15 +137,25 @@ class TestTemplateSupport(unittest.TestCase):
         self.assertEqual(asDateOrDatetime("18 May 2023 12:34"), Literal("2023-05-18T12:34:00", datatype=XSD.dateTime))
         self.assertEqual(asDateOrDatetime("18 May 2023"), Literal("2023-05-18", datatype=XSD.date))
         self.assertEqual(asDateOrDatetime("2023"), Literal("2023-01-01", datatype=XSD.date))
+        self.assertIsNone(asDateOrDatetime(None))
+        self.assertIsNone(asDateOrDatetime(""))
 
     def test_boolean(self) -> None:
         self.assertEqual(asBoolean("true"), Literal(True, datatype=XSD.boolean))
         self.assertEqual(asBoolean("True"), Literal(True, datatype=XSD.boolean))
         self.assertEqual(asBoolean("Yes"), Literal(True, datatype=XSD.boolean))
         self.assertEqual(asBoolean("1"), Literal(True, datatype=XSD.boolean))
+        self.assertEqual(asBoolean(1), Literal(True, datatype=XSD.boolean))
+        self.assertEqual(asBoolean(float(1.0)), Literal(True, datatype=XSD.boolean))
         self.assertEqual(asBoolean("no"), Literal(False, datatype=XSD.boolean))
         self.assertEqual(asBoolean("false"), Literal(False, datatype=XSD.boolean))
         self.assertEqual(asBoolean("0"), Literal(False, datatype=XSD.boolean))
+        self.assertEqual(asBoolean(""), Literal(False, datatype=XSD.boolean))
+        self.assertEqual(asBoolean(None), Literal(False, datatype=XSD.boolean))
+        self.assertEqual(asBoolean(0), Literal(False, datatype=XSD.boolean))
+        self.assertEqual(asBoolean(float(0)), Literal(False, datatype=XSD.boolean))
+        self.assertEqual(asBoolean(True), Literal(True, datatype=XSD.boolean))
+        self.assertEqual(asBoolean(False), Literal(False, datatype=XSD.boolean))
         self.assertEqual(asBoolean("y", None, "y"), Literal(True, datatype=XSD.boolean))
         self.assertEqual(asBoolean("Y", None, "y"), Literal(True, datatype=XSD.boolean))
         self.assertEqual(asBoolean("n", None, "y"), Literal(False, datatype=XSD.boolean))

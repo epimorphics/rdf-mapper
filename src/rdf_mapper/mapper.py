@@ -30,7 +30,7 @@ def finalize_output(processor:TemplateProcessor, fmt: str) -> None:
         success = processor.finalize(fmt)
         if not success:
             sys.exit(1)
-    except RuntimeError as e:
+    except RuntimeError:
         sys.exit(1)
 
 argparser = argparse.ArgumentParser(

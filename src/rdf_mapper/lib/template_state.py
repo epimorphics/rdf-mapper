@@ -38,7 +38,7 @@ class TemplateState:
     """
 
     def __init__(self, context: ChainMap[str,Any], dataset: Dataset, spec: MapperSpec,
-                 preserved_graphs: set[str] = set(), reconcile_stack: dict = {}, abort_on_error = False) -> None:
+                 preserved_graphs: set[str] = set(), reconcile_stack: dict = {}, abort_on_error: bool = False) -> None:
         self.spec = spec
         self.context = context
         self.dataset = dataset
@@ -51,8 +51,8 @@ class TemplateState:
     def add_to_context(self, prop: str, value: str) -> None:
         self.context[prop] = value
 
-    def get(self, prop: str) -> str | None:
-        return self.context.get(prop)
+    def get(self, prop: str, default: Any = None) -> Any | None:
+        return self.context.get(prop, default)
 
     def child(self, subcontext: dict) -> TemplateState:
         """Return a new template state which mirrors this but with additional temporary context bindings."""
