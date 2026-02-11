@@ -12,7 +12,9 @@ from rdf_mapper.lib.template_support import (
     asDateTime,
     pattern_expand,
     uri_expand,
-    value_expand, asDecimal,
+    value_expand,
+    asDecimal,
+    asInt
 )
 
 
@@ -106,6 +108,17 @@ class TestTemplateSupport(unittest.TestCase):
         self.assertEqual(
             value_expand("{list | splitComma}", spec.namespaces, state),
             [Literal("foo"), Literal("bar")])
+
+    def test_ints(self):
+        self.assertEqual(asInt("1"), Literal("1", datatype=XSD.integer))
+        self.assertEqual(asInt(1), Literal("1", datatype=XSD.integer))
+        self.assertEqual(asInt(1.0), Literal("1", datatype=XSD.integer))
+        self.assertEqual(asInt(1.23), Literal("1", datatype=XSD.integer))
+        self.assertEqual(asInt(float(1.99)), Literal("1", datatype=XSD.integer))
+        self.assertIsNone(asInt(None))
+        self.assertIsNone(asInt(""))
+        self.assertEqual(asInt(0), Literal("0", datatype=XSD.integer))
+        self.assertEqual(asInt(float(0.0)), Literal("0", datatype=XSD.integer))
 
     def test_decimals(self) -> None:
         self.assertEqual(asDecimal("1"), Literal("1.0", datatype=XSD.decimal))
