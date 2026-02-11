@@ -141,6 +141,8 @@ class TestTemplateSupport(unittest.TestCase):
         self.assertEqual(asBoolean(None), Literal(False, datatype=XSD.boolean))
         self.assertEqual(asBoolean(0), Literal(False, datatype=XSD.boolean))
         self.assertEqual(asBoolean(float(0)), Literal(False, datatype=XSD.boolean))
+        self.assertEqual(asBoolean(True), Literal(True, datatype=XSD.boolean))
+        self.assertEqual(asBoolean(False), Literal(False, datatype=XSD.boolean))
         self.assertEqual(asBoolean("y", None, "y"), Literal(True, datatype=XSD.boolean))
         self.assertEqual(asBoolean("Y", None, "y"), Literal(True, datatype=XSD.boolean))
         self.assertEqual(asBoolean("n", None, "y"), Literal(False, datatype=XSD.boolean))
