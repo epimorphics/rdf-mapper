@@ -242,7 +242,8 @@ def process_resource_spec(name: str, rs: ResourceSpec, state: TemplateState) -> 
                 logging.warning(f"Skipping resource {rs.name} on row {state.get('$row')} because there is no value for {key}.")
                 return None
             elif value == '':
-                logging.warning(f"Skipping resource {rs.name} on row {state.get('$row')} because value for {key} is an empty string.")
+                logging.warning(
+                    f"Skipping resource {rs.name} on row {state.get('$row')} because value for {key} is an empty string.")
                 return None
 
     # If the resource spec has an unless dict, check the row for non-matching values
@@ -261,7 +262,8 @@ def process_resource_spec(name: str, rs: ResourceSpec, state: TemplateState) -> 
             elif type(unless_value) is list:
                 if value in unless_value:
                     logging.warning(
-                        f"Skipping resource {rs.name} on row {state.get('$row')} because value for {key}  ({value}) is one of the filtered values {unless_value}."
+                        f"Skipping resource {rs.name} on row {state.get('$row')} because value for {key} ({value}) is "
+                        f"one of the filtered values {unless_value}."
                     )
                     return None
             elif unless_value is not None and value == unless_value:
@@ -330,7 +332,7 @@ def process_property_value(resource: IdentifiedNode, prop: str, template: Any, s
                 if state.abort_on_error:
                     raise ValueError(f"Failed to process property {prop} on row {state.get('$row')}: {ex}") from ex
                 else:
-                    logging.warning(f"Skipping {prop} on row {state.get('$row')} because {ex}") 
+                    logging.warning(f"Skipping {prop} on row {state.get('$row')} because {ex}")
         return
 
     # Check for inverse property
@@ -439,7 +441,7 @@ def find_fn(call: str) -> Callable | None:
             if len(args) > 0:
                 for arg in _COMMA_SPLIT.split(args):
                     if not (arg.startswith("'") and arg.endswith("'")) or (arg.startswith('"') and arg.endswith('"')):
-                        bindings.append(f"state.get('{arg}') or {arg}")
+                        bindings.append(f"state.get('{arg}', '{arg}')")
                     else:
                         bindings.append(arg)
             if fnname in _FUN_REGISTRY:
@@ -453,31 +455,40 @@ def find_fn(call: str) -> Callable | None:
             register_fn(call, fn)
     return fn
 
+def _noneOrEmpty(s: Any) -> bool:
+    return s is None or type(s) is str and s == ''
+
 def asInt3(s: str, state: TemplateState | None = None)-> int:
     """Return triple integer value of string, used for testing."""
     return int(s)*3
 
-def asInt(s: str, state: TemplateState | None = None) -> Literal | None:
-    return Literal(int(float(s))) if s else None
+def asInt(s: Any, state: TemplateState | None = None) -> Literal | None:
+    return Literal(int(float(s))) if not _noneOrEmpty(s) else None
     # return Literal(s, datatype=XSD.integer) if s else None
 
-def asDecimal(s: str, state: TemplateState | None = None) -> Literal | None:
-    return Literal(s, datatype=XSD.decimal) if s else None
+def asDecimal(s: Any, state: TemplateState | None = None) -> Literal | None:
+    if _noneOrEmpty(s):
+        return None
+    if type(s) is float:
+        return Literal(s, datatype=XSD.decimal)
+    else:
+        return Literal(float(s), datatype=XSD.decimal)
 
-def asDateTime(s: str, state: TemplateState | None = None) -> Literal | None:
-    if s is None:
+
+def asDateTime(s: Any, state: TemplateState | None = None) -> Literal | None:
+    if _noneOrEmpty(s) or type(s) is not str:
         return None
     dt = dateparser.parse(s)
     return Literal(dt.isoformat(), datatype=XSD.dateTime) if dt else None
 
 def asDate(s: str, state: TemplateState | None = None) -> Literal | None:
-    if s is None:
+    if _noneOrEmpty(s) or type(s) is not str:
         return None
     dt = dateparser.parse(s)
     return Literal(dt.date().isoformat(), datatype=XSD.date) if dt else None
 
 def asDateOrDatetime(s: str, state: TemplateState | None = None) -> Literal | None:
-    if s is None:
+    if _noneOrEmpty(s) or type(s) is not str:
         return None
     if re.fullmatch(r"[12]\d{3}", s):
         return Literal(f'{s}-01-01', datatype=XSD.date)
@@ -491,10 +502,17 @@ def asDateOrDatetime(s: str, state: TemplateState | None = None) -> Literal | No
         else:
             return None
 
-def asBoolean(s: str, state: TemplateState | None = None, *args) -> Literal:
+def _foldForComparison(v: Any) -> Any:
+    if type(v) is str:
+        return v.lower()
+    return v
+
+def asBoolean(s: Any, state: TemplateState | None = None, *args) -> Literal:
+    if s is None:
+        return Literal(False, datatype=XSD.boolean)
     if len(args) > 0:
-        return Literal(s.lower() in [a.lower() for a in args], datatype=XSD.boolean)
-    return Literal(s.lower() in ["yes", "true", "ok", "1"], datatype=XSD.boolean)
+        return Literal(_foldForComparison(s) in [_foldForComparison(a) for a in args], datatype=XSD.boolean)
+    return Literal(_foldForComparison(s) in ["yes", "true", "ok", "1", 1, float(1)], datatype=XSD.boolean)
 
 def trim(s: str, state: TemplateState | None = None) -> str | None:
     return s.strip() if s else None
