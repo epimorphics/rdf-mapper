@@ -39,18 +39,7 @@ See [docs](./doc/doc.md)
 
 ## Changes
 
-### Version 0.2.0
-  
-   * wrap as module `rdf_mapper` which defines a `mapper` CLI
-   * fix issues with skipping property rows that reference missing source values
-   * include namespace declarations in the generated ttl
-   * make `asDate` treat a bare year as `yyyy-01-01`
-   * add `expr()` transform to allow inline python expressions in value mappings
-   * suppress auto create of properties, classes and resource types unless `--auto-declare` is set - avoids need to always have explicit `@type`
-   * support for value mapping tables (could extend to support CSV-based maps if desired)
-   * support for output to multiple graphs (`@graph` and `@graphAdd`)
-   * support for Sparql Update output for multi-graph templates with `update` and `delete` format
-   * add hash transform for more flexible URI generation
+See [changelog](./CHANGELOG.md)
 
 ## Dev set up
 
