@@ -360,6 +360,36 @@ class TestTemplateProcessor(unittest.TestCase):
             [{"id": "123", "flag": "n"},{"id": "456", "flag": "y"}],
             "asBoolean_producing_false.ttl"
         )
+    
+    def test_langString_quoted_value(self):
+        self.do_test(
+            MapperSpec({
+                "resources": [{
+                    "name": "Test",
+                    "properties": {
+                        "@id": "<http://example.com/{id}>",
+                        "p": "{label}@en"
+                    }
+                }]
+            }, auto_declare=False),
+            [{"id": "123", "label": '"A quoted value"'}],
+            "langString_quoted_value.ttl"
+        )
+    
+    def test_langString_with_newline(self):
+        self.do_test(
+            MapperSpec({
+                "resources": [{
+                    "name": "Test",
+                    "properties": {
+                        "@id": "<http://example.com/{id}>",
+                        "p": "{label}@en"
+                    }
+                }]
+            }, auto_declare=False),
+            [{"id": "123", "label": "A value with a newline\nin it"}],
+            "langString_with_newline.ttl"
+        )
 
     def do_test(self, spec: MapperSpec, rows: list, expected: str | None) -> None:
         self.maxDiff = 5000
