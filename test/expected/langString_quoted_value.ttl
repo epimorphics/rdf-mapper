@@ -1,0 +1,4 @@
+@prefix def: <https://epimorphics.com/datasets/None/def/> .
+
+<http://example.com/123> def:p "\"A quoted value\""@en .
+

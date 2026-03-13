@@ -174,8 +174,8 @@ def _expand_curi(uriref: str, namespaces: Mapping[str,str]) -> str:
     return uriref
 
 
-_LANGSTRING_PATTERN = re.compile(r"^(.+)@([\w\-]+)$")
-_DT_PATTERN = re.compile(r"^(.+)\^\^(<[^>]+>)$")
+_LANGSTRING_PATTERN = re.compile(r"^(.+)@([\w\-]+)$", re.DOTALL)
+_DT_PATTERN = re.compile(r"^(.+)\^\^(<[^>]+>)$", re.DOTALL)
 
 def value_expand(pattern: str, namespaces: Mapping[str,str], state: TemplateState) -> Union[None, term.Identifier, list[term.Identifier]]:  # noqa: E501
     """Expand a value template to an RDF value.
