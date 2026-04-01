@@ -8,11 +8,11 @@ This project is currently in pre-release and a new minor version increment MAY N
 
 ## [Unreleased]
 
-## [0.2.5] - 2026-03-13
-
 ### Added
 
 - Added support for resource templates that generate a literal. (#42)
+
+## [0.2.5] - 2026-03-13
 
 ### Fixed
 
