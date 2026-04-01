@@ -148,6 +148,25 @@ class TestTemplateProcessor(unittest.TestCase):
                 }]
             }),
             [self.row1], "embedded_template.ttl")
+    
+    def test_embedded_literal_template(self) -> None:
+        self.do_test(
+             MapperSpec({
+                "globals": {"$datasetID": "testds"},
+                "namespaces" : { "aglib" : "https://epimorphics.com/library/def/" },
+                "resources" : [{
+                    "name": "registration",
+                    "properties": {
+                        "regNo" : "{id}",
+                        "crop-situation" : "{croplink | map_to('crop-situation')}"
+                    }
+                }],
+                "embedded" : [{
+                    "name": "crop-situation",
+                    "pattern" : "{crop} ({qualifier})@en"
+                }]
+            }),
+            [self.row1], "embedded_literal_template.ttl")
 
     def test_one_off(self) -> None:
         self.do_test(
@@ -228,6 +247,23 @@ class TestTemplateProcessor(unittest.TestCase):
                 }]
             }),
             [self.row1], "nested_resource_spec.ttl")
+    
+    def test_nested_literal_resource_spec(self) -> None:
+        self.do_test(
+            MapperSpec({
+                "globals": {"$datasetID": "testds"},
+                "resources": [{
+                    "name": "registration",
+                    "properties": {
+                        "@id": "<http://example.com/{id}>",
+                        "prop": {
+                            "name": "nested",
+                            "pattern": "{x}@en",
+                        }
+                    }
+                }]
+            }),
+            [self.row1], "nested_literal_resource_spec.ttl")
 
     def test_map_by(self) -> None:
         self.do_test(

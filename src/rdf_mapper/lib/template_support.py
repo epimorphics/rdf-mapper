@@ -19,7 +19,7 @@ from typing import Any, Union
 from urllib.parse import urljoin
 
 import dateparser
-from rdflib import RDF, SKOS, XSD, BNode, IdentifiedNode, Literal, URIRef, term
+from rdflib import RDF, SKOS, XSD, BNode, IdentifiedNode, Literal, Node, URIRef, term
 
 from rdf_mapper.lib.mapper_spec import PropSpec, ResourceSpec
 from rdf_mapper.lib.reconcile import MatchResult, ReconcileRequest, requestReconcile
@@ -217,7 +217,7 @@ def _value_to_rdf(val: Any, state:TemplateState) -> Union[None, term.Identifier,
     else:
         return Literal(val)
 
-def process_resource_spec(name: str, rs: ResourceSpec, state: TemplateState) -> IdentifiedNode | None:
+def process_resource_spec(name: str, rs: ResourceSpec, state: TemplateState) -> term.Identifier | None:
     """Process a single resource specification in the current context."""
     state.add_to_context("$resourceID", name)
     # properties = rs.properties  # TODO check why this was there but unused
@@ -271,6 +271,17 @@ def process_resource_spec(name: str, rs: ResourceSpec, state: TemplateState) -> 
                     f"Skipping resource {rs.name} on row {state.get('$row')} because value for {key} is {value}."
                 )
                 return None
+
+    if 'pattern' in rs.spec:
+        pattern = rs.pattern
+        if not isinstance(pattern, str):
+            raise ValueError(f"Resource spec pattern must be a string, was {pattern}")
+        expanded = value_expand(pattern, namespaces, state)
+        if isinstance(expanded, list):
+            logging.warning(f"Resource spec pattern {rs.name} expansion resulted in a list, only using first value")
+            return expanded[0]
+        else:
+            return expanded
 
     # Check for switch of graph
     if rs.graph:
@@ -538,12 +549,12 @@ def expr(s: Any, state: TemplateState | None = None, expression: str = "") -> An
         _EXPR_CACHE[expression] = code
     return eval(code, {}, {"x": s, "state": state})
 
-def _create_resource(data: dict, state: TemplateState, rs: ResourceSpec) -> IdentifiedNode | None:
+def _create_resource(data: dict, state: TemplateState, rs: ResourceSpec) -> term.Identifier | None:
     if not rs.name:
         raise ValueError("Resource spec must have a name, {rs}")
     return process_resource_spec(rs.name, rs, state.child(data))
 
-def map_to(data: dict, state: TemplateState, rsname: str) -> IdentifiedNode | None:
+def map_to(data: dict, state: TemplateState, rsname: str) -> term.Identifier | None:
     if not data:
         return None
     rs = state.spec.embedded_resources.get(rsname)
@@ -622,6 +633,8 @@ def reconcile(key: str, state: TemplateState, name: str, _type: str | None = Non
                     _id =  _create_resource(reconcile_spec, state, rs)
                     if not _id:
                         raise ValueError(f"Failed to create reconciled resource for {keydesc}")
+                    if not isinstance(_id, URIRef):
+                        raise ValueError(f"Reconciled resource for {keydesc} is not a URIRef, got {_id}")
                     else:
                         for pm in matchResult.possible_matches:
                             pm.record_as_rdf(state.current_graph(), _id)
@@ -689,12 +702,16 @@ def autoCV(label: str, state: TemplateState, cv_name: str, cv_type: str | None =
             schemeID = _create_resource({"name" : cv_name, "id" : base + "_scheme"}, state, _AUTO_CONCEPT_SCHEME_SPEC)
             if not schemeID:
                 raise ValueError(f"Failed to create scheme for {cv_name}")
+            elif not isinstance(schemeID, IdentifiedNode):
+                raise ValueError(f"Scheme ID for {cv_name} is not a URIRef or Blank Node, got {schemeID}")
             else:
                 state.record_auto_cv(cv_name +"_", "scheme", schemeID)
         idstr = base + "/" + (_make_hash(label ) if cv_type == "hash" else normalize(label))
         _id = _create_resource({"label" : label, "schemeID" : schemeID, "id": idstr}, state, _AUTO_CONCEPT_SPEC)
         if not _id:
             raise ValueError(f"Failed to create concept for {cv_name} - {label}")
+        elif not isinstance(_id, IdentifiedNode):
+            raise ValueError(f"Concept ID for {cv_name} - {label} is not a URIRef or Blank Node, got {_id}")
         else:
             state.record_auto_cv(cv_name, label, _id)
     return _id

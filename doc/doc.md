@@ -160,7 +160,7 @@ URI templates (which generate URI values) are mostly indicated by surrounding `<
 | `<prefix:local>` | A CURI, where `prefix` is a builtin or locally defined namespace and `local` gives a localname component which can include templated variables |
 | `<row>` | Generate a URI in the dataset data namespace based on the file name and row number |
 | `<uuid>` | Generate a URI in the dataset data namespace base on a UUID |
-| `<hash(val1,...,valn)>`| Generate a URI in the dataset data namespace, using an encoded hash of the argument vaules. Each value to be hashed can be either a variable name (e.g. a column name from the data) or a literal string `'value'` |
+| `<hash(val1,...,valn)>`| Generate a URI in the dataset data namespace, using an encoded hash of the argument values. Each value to be hashed can be either a variable name (e.g. a column name from the data) or a literal string `'value'` |
 | `<parent>` | Generate a URI relative to the parent URI when processing an embedded template, the relative URI will use the resourceID and any list index if the embedded template is processing a list of values |
 | `<::name>` | Back reference to the URI of a previously generated resource with the given name |
 | `name` | Generate a URI in the dataset data namespace with localname `name`, this version, without `<...>` is only applicable in cases where the template is known to be a URI (`@id` or `@type`) |
@@ -170,7 +170,7 @@ Base URIs for the data set default to `<{$datasetBase}/data/>` for data elements
 
 Namespaces used as prefixes in CURIs can be defined in the namespaces stanza, e.g.
 
-```
+```yaml
 namespaces:
   voc : https://epimorphics.com/def/
 ```
@@ -182,12 +182,27 @@ Namespaces for `rdf`, `rdfs`, `owl`, `skos`, `skosxl`, `dct`, `qb` and `org` are
 In addition to URI values then plain and typed literal templates are available:
 
 | Value template | Interpretation |
-|---|---|
+| --- | --- |
 | `foo{x}bar` | Plain template, any variables in `{...}` are replaced by the corresponding value from context |
 | "" | Empty string indicates using the property name as variable name, just transposing across, so equivalent to `{$prop}` where `$prop` is the property reference |
 | `foo{x}bar@lang` | Language typed literal |
 | `foo{x}bar^^<uri>` | Data typed literal. The value `<uri>` is expanded as a URI pattern. |
 | `{var \| fn \| fn}` | The value of the variable is transformed via a pipeline of transformation operators such as type conversion |
+
+### Literal templates
+
+A literal template provides an additional level of control over the generation of literal property values.
+
+A literal template may appear either as a template in the `embedded` stanza or as a child of a property template.
+
+A literal template is an object with the following fields:
+
+| Field | Interpretation |
+| --- | --- |
+| `name` | A name for the template used to reference this template and identify it in logging messages. |
+| `requires` | An optional dictionary mapping column names to the value(s) required to be in that column for the resource mapping to be applied. A list of values may be provided, in which case the column must contain at least one of the specified values. If no value is provided, then the column is required to have any non-empty value.
+| `unless` | An optional dictionary mapping column names to the value(s) required to *not* be in that column for the resource mapping to be applied. A list of values may be provided, in which case the column must not contain any of the specified values. If no value is provided, then the column must have no value or an empty value for the resource to be processed. |
+| `pattern` | A required [literal pattern](#literal-patterns) string. |
 
 ### Variables
 

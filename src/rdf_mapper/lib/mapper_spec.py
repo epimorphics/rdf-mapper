@@ -206,8 +206,17 @@ class ResourceSpec:
             self.unless = spec.get("unless")
             if self.requires is not None and not isinstance(self.requires, dict):
                 _error(f"Resource spec requires must be a dictionary, was {self.requires}")
+        elif isinstance(spec, dict) and "name" in spec and "pattern" in spec:
+            self.spec = spec
+            self.name = spec.get("name")
+            self.pattern = spec.get("pattern")
+            self.properties = []
+            self.requires = spec.get("requires")
+            self.unless = spec.get("unless")
+            if self.requires is not None and not isinstance(self.requires, dict):
+                _error(f"Resource spec requires must be a dictionary, was {self.requires}")
         else:
-            _error(f"Resource spec must be a map with at least name and some properties, was {spec}")
+            _error(f"Resource spec must be a map with at least name and some properties or a pattern, was {spec}")
 
     def find_prop_defn(self, name: str) -> str | None:
         return next((p[1] for p in self.properties if p[0] == name), None)

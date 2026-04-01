@@ -10,6 +10,10 @@ This project is currently in pre-release and a new minor version increment MAY N
 
 ## [0.2.5] - 2026-03-13
 
+### Added
+
+- Added support for resource templates that generate a literal. (#42)
+
 ### Fixed
 
 - Fix handling of multi-line values when the mapping template includes a data-type or language tag. (#37)
