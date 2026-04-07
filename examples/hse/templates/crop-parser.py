@@ -4,10 +4,12 @@
 # [{'crop': 'wheat', 'qualifiers': ['winter', 'undersown with grass', 'seed']}]
 
 
+from typing import Optional
+
 from lark import Lark, Transformer
 from lark.visitors import v_args
 from rdf_mapper.lib.template_state import TemplateState
-from rdf_mapper.lib.template_support import register_fn
+from rdf_mapper.lib.function import register
 
 crop_parser = Lark(r"""
     crop_list: crop | [crop ","]+ crop
@@ -39,7 +41,7 @@ class CropTransformer(Transformer):
     def qualifier(self, children):
         return ' '.join( children )
 
-def parse(text: str, state: TemplateState = None):
+def parse(text: str, state: Optional[TemplateState] = None):
     parse = crop_parser.parse(text)
     return CropTransformer().transform(parse)
 
@@ -50,4 +52,4 @@ def checks():
     print(parse("wheat (winter, undersown with grass, seed)"))
 
 # checks()
-register_fn("crop_parse", parse)
+register("crop_parse", parse)

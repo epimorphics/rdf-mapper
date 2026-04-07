@@ -4,11 +4,13 @@
 # [{'concentration': Decimal('0.015'), 'unit': 'g/l', 'substance': 'lambda-cyhalothrin'}]
 
 
+from typing import Optional
+
 from lark import Lark, Transformer
 from lark.visitors import v_args
 from decimal import Decimal
 from rdf_mapper.lib.template_state import TemplateState
-from rdf_mapper.lib.template_support import register_fn
+from rdf_mapper.lib.template_support import register
 
 substance_parser = Lark(r"""
     ingredient_list: ingredient
@@ -69,7 +71,7 @@ class SubstanceTransformer(Transformer):
     def substance(self, tree):
         return ' '.join( tree )
 
-def parse(text: str, state: TemplateState = None):
+def parse(text: str, state: Optional[TemplateState] = None):
     try:
         parse = substance_parser.parse(text)
         return SubstanceTransformer().transform(parse)
@@ -86,4 +88,4 @@ def checks():
     print(parse("0.729 g / l 2,4-D, 0.235 g / l dicamba, 0.745 g / l MCPA and 0.464 g / l mecoprop-P"))
 
 # checks()
-register_fn("ingredient_parse", parse)
+register("ingredient_parse", parse)
