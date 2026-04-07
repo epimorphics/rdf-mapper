@@ -15,21 +15,22 @@ import logging
 import re
 import uuid
 from collections.abc import Callable, Mapping
-from typing import Any, Union
+from itertools import chain
+from typing import Any, List, Union
 from urllib.parse import urljoin
 
 import dateparser
 from rdflib import RDF, SKOS, XSD, BNode, IdentifiedNode, Literal, Node, URIRef, term
+from rdflib.term import Identifier
 
 from rdf_mapper.lib.mapper_spec import PropSpec, ResourceSpec
 from rdf_mapper.lib.reconcile import MatchResult, ReconcileRequest, requestReconcile
 from rdf_mapper.lib.template_state import ReconciliationRecord, TemplateState
+from rdf_mapper.lib.pattern import Pattern
+from rdf_mapper.lib.function import register
+from rdf_mapper.lib.errors import MissingValueWarning
 
 _VARPATTERN = re.compile(r"{([^}]*)}")
-
-class MissingValueWarning(RuntimeWarning):
-    def __init__(self, message: str) -> None:
-        super().__init__(message)
 
 def pattern_expand(template: str, state: TemplateState) -> str:
     """Return template with var references {var} expanded from the given dict-like context.
@@ -39,6 +40,8 @@ def pattern_expand(template: str, state: TemplateState) -> str:
        If the whole pattern is a var reference "{var}" can return a typed value if the
        context or any transformation functions return a typed value.
     """
+    pattern = Pattern(template)
+    values = list(pattern.execute(state))
     if _VARPATTERN.fullmatch(template):
         return valueof_var(template[1:-1], state)
     else:
@@ -196,8 +199,8 @@ def value_expand(pattern: str, namespaces: Mapping[str,str], state: TemplateStat
         else:
             return URIRef(uri_expand(pattern, namespaces, state))
     else:
-        val = pattern_expand(pattern, state)
-        return _value_to_rdf(val, state)
+        p = Pattern(pattern)
+        return list(p.execute(state))
 
 def _value_to_rdf(val: Any, state:TemplateState) -> Union[None, term.Identifier, list[term.Identifier]]:
     if isinstance(val, term.Identifier):
@@ -554,19 +557,21 @@ def _create_resource(data: dict, state: TemplateState, rs: ResourceSpec) -> term
         raise ValueError("Resource spec must have a name, {rs}")
     return process_resource_spec(rs.name, rs, state.child(data))
 
-def map_to(data: dict, state: TemplateState, rsname: str) -> term.Identifier | None:
+def map_to(data: Any, state: TemplateState, rsname: str) -> List[Identifier | None]:
     if not data:
-        return None
+        return [None]
+    if isinstance(data, list):
+        return list(chain(map_to(d, state.child({"$listIndex": ix}), rsname)[0] for ix, d in enumerate(data)))  # type: ignore - TODO better typing for single depth list
     rs = state.spec.embedded_resources.get(rsname)
     if not rs:
             raise ValueError(f"map_to could not find embedded template called {rsname}")
     if not isinstance(data, dict):
         raise ValueError(f"map_to expecting data to be a dict but found {data}")
-    return _create_resource(data, state, rs)
+    return [_create_resource(data, state, rs)]
 
-def map_by(data: str, state: TemplateState, mapping_name: str) -> term.Identifier | None:
-    if not data:
-        return None
+register("map_to", map_to)
+
+def map_by(data: Any, state: TemplateState, mapping_name: str) -> Identifier | list[Identifier] | None:
     mapping = state.spec.mappings.get(mapping_name)
     if not mapping:
         raise ValueError(f"map_by could not find mapping called {mapping_name}")
@@ -578,11 +583,39 @@ def map_by(data: str, state: TemplateState, mapping_name: str) -> term.Identifie
     value = value_expand(mapped, state.spec.namespaces, state)
     if value is None:
         raise ValueError(f"map_by could not complete mapping for {data} in {mapping_name}")
-    elif isinstance(value, list):
-        logging.warning(f"map_by mapping for {data} in {mapping_name} resulted in a list, only using first value")
-        return value[0]
-    else:
-        return value
+    return value
+
+register("map_by", map_by)
+
+# def map_to(data: dict, state: TemplateState, rsname: str) -> term.Identifier | None:
+#     if not data:
+#         return None
+#     rs = state.spec.embedded_resources.get(rsname)
+#     if not rs:
+#             raise ValueError(f"map_to could not find embedded template called {rsname}")
+#     if not isinstance(data, dict):
+#         raise ValueError(f"map_to expecting data to be a dict but found {data}")
+#     return _create_resource(data, state, rs)
+
+# def map_by(data: str, state: TemplateState, mapping_name: str) -> term.Identifier | None:
+#     if not data:
+#         return None
+#     mapping = state.spec.mappings.get(mapping_name)
+#     if not mapping:
+#         raise ValueError(f"map_by could not find mapping called {mapping_name}")
+#     if not isinstance(data, str):
+#         raise ValueError(f"map_by expecting data to be a string but found {data}")
+#     mapped = mapping.get(data)
+#     if mapped is None:
+#         raise ValueError(f"map_by could not find mapping for {data} in {mapping_name}")
+#     value = value_expand(mapped, state.spec.namespaces, state)
+#     if value is None:
+#         raise ValueError(f"map_by could not complete mapping for {data} in {mapping_name}")
+#     elif isinstance(value, list):
+#         logging.warning(f"map_by mapping for {data} in {mapping_name} resulted in a list, only using first value")
+#         return value[0]
+#     else:
+#         return value
 
 def hash(arg: str | None, state: TemplateState, *keys: str) -> str:  # noqa: A001
     _hash = hashlib.sha1()
@@ -647,6 +680,8 @@ def reconcile(key: str, state: TemplateState, name: str, _type: str | None = Non
         else:
             raise ValueError(f"Reconciliation attempt on {key}-{_type} at {api} returned empty result list")
     return _id
+
+register("reconcile", reconcile)
 
 def _make_hash(key: str) -> str:
     _hash = hashlib.sha1()
@@ -716,5 +751,10 @@ def autoCV(label: str, state: TemplateState, cv_name: str, cv_type: str | None =
             state.record_auto_cv(cv_name, label, _id)
     return _id
 
+register("autoCV", autoCV)
+
 def now(_: Any, state: TemplateState) -> Literal:
     return Literal(datetime.datetime.now().isoformat(), datatype=XSD.dateTime)
+
+register("now", now)
+

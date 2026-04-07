@@ -6,13 +6,15 @@ from rdflib import XSD, Dataset, Literal, URIRef
 from rdf_mapper.lib.mapper_spec import MapperSpec
 from rdf_mapper.lib.template_state import TemplateState
 from rdf_mapper.lib.template_support import (
+    pattern_expand,
+    uri_expand,
+    value_expand
+)
+from rdf_mapper.lib.function import (
     asBoolean,
     asDate,
     asDateOrDatetime,
     asDateTime,
-    pattern_expand,
-    uri_expand,
-    value_expand,
     asDecimal,
     asInt
 )
