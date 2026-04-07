@@ -4,7 +4,7 @@ from typing import Any, Callable, Iterable, Iterator, Protocol
 from rdflib import Literal
 from rdflib.term import Identifier
 
-from rdf_mapper.lib.errors import PatternExpansionError, MissingValueWarning
+from rdf_mapper.lib.errors import MissingValueWarning
 from rdf_mapper.lib.template_state import TemplateState
 from rdf_mapper.lib import function
 
@@ -31,23 +31,25 @@ class Pattern:
     def execute(self, state: TemplateState) -> Iterator[Identifier]:
         values = list(self._call_chain[0](None, state))
         for func in self._call_chain[1:]:
-            values = list(self._append(v, result) for v in values for result in func(v, state))
+            values = list(self._concat(v, result) for v in values for result in func(v, state))
         yield from map(lambda v: self._wrap_literal(v), filter(lambda v: v is not None, values))
 
     def _wrap_literal(self, node: Identifier) -> Identifier:
-        if isinstance(node, Literal):
-            if self.type == "langstring" and self.lang:
-                return Literal(node.value, lang=self.lang)
-            elif self.type == "datatype" and self.datatype:
-                return Literal(node.value, datatype=self.datatype)
         if self.type == "langstring":
             return Literal(str(node), lang=self.lang)
         elif self.type == "datatype":
             return Literal(str(node), datatype=self.datatype)
-        else:
-            return node
+        elif isinstance(node, Literal) and isinstance(node.value, str):
+            # Attempt to parse language tagged string or datatype from the literal value if it is in the form "value@lang" or "value^^datatype"
+            langstring_match = self._LANGSTRING_PATTERN.match(node.value)
+            if langstring_match:
+                return Literal(langstring_match.group(1), lang=langstring_match.group(2))
+            dt_match = self._DT_PATTERN.match(node.value)
+            if dt_match:
+                return Literal(dt_match.group(1), datatype=dt_match.group(2))
+        return node
 
-    def _append(self, node1: Identifier|None, node2: Identifier) -> Identifier:
+    def _concat(self, node1: Identifier|None, node2: Identifier) -> Identifier:
         if node1 is None:
             return node2
         if isinstance(node1, Literal) and isinstance(node2, Literal):
@@ -89,7 +91,7 @@ class Pattern:
     
     def _parse_variable_exapnsion(self, var_string: str) -> None:
         var_parts = self._PIPEPATTERN.split(var_string)
-        var_name = var_parts[0]
+        var_name = var_parts[0].strip()
         var_expansion = VariableExpansion(var_name, var_parts[1:])
         self._call_chain.append(var_expansion.execute)
     
@@ -104,7 +106,11 @@ class VariableExpansion:
             self._call_chain.append(function.get(function_call_string))
 
     def execute(self,_:Any, state: TemplateState) -> Iterator[Identifier]:
-        values = list(self._call_chain[0](None, state))
+        values = self._call_chain[0](None, state)
+        if isinstance(values, Iterable) and not isinstance(values, str):
+            values = list(values)
+        else:
+            values = [values]
         for func in self._call_chain[1:]:
             results = []
             for v in values:

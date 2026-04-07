@@ -164,3 +164,5 @@ def hash(arg: str | None, state: TemplateState, *keys: str) -> str:  # noqa: A00
         _hash.update(bytes(str(key),"UTF-8"))
     return base64.b32hexencode(_hash.digest()).decode("UTF-8")
 
+def now(_: Any, state: TemplateState) -> Literal:
+    return Literal(datetime.datetime.now().isoformat(), datatype=XSD.dateTime)
