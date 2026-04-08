@@ -84,12 +84,12 @@ class Pattern:
         for var_match in self._VARPATTERN.finditer(to_parse):
             if var_match.start() > last_index:
                 self._call_chain.append(static_value(to_parse[last_index:var_match.start()]))
-            self._parse_variable_exapnsion(var_match.group(1))
+            self._parse_variable_expansion(var_match.group(1))
             last_index = var_match.end()
         if last_index < len(to_parse):
             self._call_chain.append(static_value(to_parse[last_index:]))
     
-    def _parse_variable_exapnsion(self, var_string: str) -> None:
+    def _parse_variable_expansion(self, var_string: str) -> None:
         var_parts = self._PIPEPATTERN.split(var_string)
         var_name = var_parts[0].strip()
         var_expansion = VariableExpansion(var_name, var_parts[1:])
