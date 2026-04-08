@@ -84,6 +84,7 @@ class MapperSpec:
         self.globals = merged.globals
         self.namespaces = merged.namespaces
         self.propertySpecs = merged.propertySpecs
+        self.embedded_resources = merged.embedded_resources
         self.one_offs = merged.one_offs
         self.mappings = merged.mappings
 

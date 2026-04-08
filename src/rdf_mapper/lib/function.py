@@ -1,9 +1,9 @@
 
 import base64
-from collections.abc import Callable
 import datetime
 import hashlib
 import re
+from collections.abc import Callable
 from typing import Any
 
 import dateparser
@@ -13,13 +13,12 @@ from rdflib.term import Literal
 from rdf_mapper.lib.errors import PatternExpansionError
 from rdf_mapper.lib.template_state import TemplateState
 
-
 _CALL_PATTERN = re.compile(r"([\w]+)\s*\((.*)\s*\)")
 _ARG_PATTERN = re.compile(r"""\s*(?P<arg>('([^']*)')|("([^"]*)")|([^\s,]+))\s*""")
 
 _REGISTRY: dict[str, Callable] = {}
 
-def register(name: str, func: Callable):
+def register(name: str, func: Callable) -> None:
     _REGISTRY[name] = func
 
 def get(name: str) -> Callable:
@@ -118,13 +117,16 @@ def asBoolean(s: Any, state: TemplateState | None = None, *args) -> Literal:
         return Literal(_foldForComparison(s) in [_foldForComparison(a) for a in args], datatype=XSD.boolean)
     return Literal(_foldForComparison(s) in ["yes", "true", "ok", "1", 1, float(1)], datatype=XSD.boolean)
 
-def _string_check(s: Any, func_name: str) -> str:
+def _string_check(s: Any, func_name: str, permissive: bool = False) -> str:
     if s is None:
         raise ValueError(f"{func_name} function does not accept None as input")
     if isinstance(s, Literal):
         return s.value
     if type(s) is not str:
-        raise ValueError(f"{func_name} function only accepts strings, or Literals as input but found {type(s)}")
+        if permissive:
+            return str(s)
+        else:
+            raise ValueError(f"{func_name} function only accepts strings, or Literals as input but found {type(s)}")
     return s
 
 def trim(s: Any, state: TemplateState | None = None) -> str:
@@ -138,6 +140,10 @@ def toLower(s: Any, state: TemplateState | None = None) -> str:
 def toUpper(s: Any, state: TemplateState | None = None) -> str:
     s = _string_check(s, "toUpper")
     return s.upper()
+
+def slug(s: Any, state: TemplateState | None = None) -> str:
+    s = _string_check(s, "slug", permissive=True)
+    return '-'.join(s.lower().split()).replace('%', '_').replace('/', '_').replace('[', '_').replace(']', '_')
 
 def splitComma(s: Any, state: TemplateState | None = None) -> list[str]:
     s = _string_check(s, "splitComma")

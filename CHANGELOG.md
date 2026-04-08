@@ -11,6 +11,11 @@ This project is currently in pre-release and a new minor version increment MAY N
 ### Added
 
 - Added support for resource templates that generate a literal. (#42)
+- Added new builtin `slug` function to convert strings to "slugs" that can be used in a IRI path segment.
+
+### Fixed
+
+- Embedded resources are now loaded from imported templates (#45)
 
 ## [0.2.5] - 2026-03-13
 
