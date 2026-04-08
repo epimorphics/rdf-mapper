@@ -12,6 +12,10 @@ This project is currently in pre-release and a new minor version increment MAY N
 
 - Added support for resource templates that generate a literal. (#42)
 
+### Fixed
+
+- Embedded resources are now loaded from imported templates (#45)
+
 ## [0.2.5] - 2026-03-13
 
 ### Fixed
