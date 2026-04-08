@@ -6,13 +6,15 @@ from rdflib import XSD, Dataset, Literal, URIRef
 from rdf_mapper.lib.mapper_spec import MapperSpec
 from rdf_mapper.lib.template_state import TemplateState
 from rdf_mapper.lib.template_support import (
+    pattern_expand,
+    uri_expand,
+    value_expand
+)
+from rdf_mapper.lib.function import (
     asBoolean,
     asDate,
     asDateOrDatetime,
     asDateTime,
-    pattern_expand,
-    uri_expand,
-    value_expand,
     asDecimal,
     asInt
 )
@@ -27,13 +29,13 @@ class TestTemplateSupport(unittest.TestCase):
 
     def test_var_expand(self) -> None:
         context = self._mkcontext({"a": "aval", "b": 42, "z": "zval"})
-        self.assertEqual(pattern_expand("foo {a} bar", context), "foo aval bar")
-        self.assertEqual(pattern_expand("{a}foo{b}bar{z}", context), "avalfoo42barzval")
+        self.assertEqual(pattern_expand("foo {a} bar", context)[0], "foo aval bar")
+        self.assertEqual(pattern_expand("{a}foo{b}bar{z}", context)[0], "avalfoo42barzval")
 
     def test_function_expand(self) -> None:
         context = self._mkcontext({"x": 5})
-        self.assertEqual(pattern_expand("{x | asInt3}", context), 15)
-        self.assertEqual(pattern_expand("foo {x | asInt3} bar", context), "foo 15 bar")
+        self.assertEqual(pattern_expand("{x | asInt3}", context)[0], 15)
+        self.assertEqual(pattern_expand("foo {x | asInt3} bar", context)[0], "foo 15 bar")
 
     def test_uri_expand(self) -> None:
         spec = MapperSpec({"globals": {"$datasetID": "testds"}})
@@ -92,16 +94,18 @@ class TestTemplateSupport(unittest.TestCase):
 
         self.assertEqual(
             value_expand("hell{x}o", spec.namespaces, state),
-            Literal("hellfooo"))
+            [Literal("hellfooo")]
+        )
         self.assertEqual(
             value_expand("{x}{y}@{l}", spec.namespaces, state),
-            Literal("foobar", lang="en"))
+            [Literal("foobar", lang="en")]
+        )
         self.assertEqual(
             value_expand("{d}", spec.namespaces, state),
-            Literal("1.23"))
+            [Literal("1.23")])
         self.assertEqual(
             value_expand("{d | asDecimal}", spec.namespaces, state),
-            Literal("1.23", datatype=XSD.decimal))
+            [Literal("1.23", datatype=XSD.decimal)])
         self.assertEqual(
             value_expand("<skos:Concept>", spec.namespaces, state),
             URIRef("http://www.w3.org/2004/02/skos/core#Concept"))
@@ -171,18 +175,18 @@ class TestTemplateSupport(unittest.TestCase):
 
     def test_inline_eval(self) -> None:
         state = self._mkcontext({"value": 3})
-        self.assertEqual(value_expand("{value | expr('x*5 + 3')}", self._dummy_spec.namespaces, state), Literal(18))
-        self.assertEqual(value_expand("{value | expr('(x+6)//3')}", self._dummy_spec.namespaces, state), Literal(3))
+        self.assertEqual(value_expand("{value | expr('x*5 + 3')}", self._dummy_spec.namespaces, state), [Literal(18)])
+        self.assertEqual(value_expand("{value | expr('(x+6)//3')}", self._dummy_spec.namespaces, state), [Literal(3)])
         # Repeat earlier test to check the caching of compiled expressions is working
-        self.assertEqual(value_expand("{value | expr('x*5 + 3')}", self._dummy_spec.namespaces, state), Literal(18))
+        self.assertEqual(value_expand("{value | expr('x*5 + 3')}", self._dummy_spec.namespaces, state), [Literal(18)])
 
     def test_now(self) -> None:
         spec = MapperSpec({"globals": {"$datasetID": "testds"}})
         state = TemplateState(spec.context.new_child({"$row": 1, "$file": "file"}), Dataset(), spec)
         v = value_expand("{|now}", spec.namespaces, state)
-        self.assertTrue(isinstance(v, Literal))
-        assert isinstance(v, Literal)
-        self.assertEqual(v.datatype, XSD.dateTime)
+        self.assertTrue(isinstance(v, list))
+        self.assertTrue(all(isinstance(item, Literal) for item in v))
+        self.assertEqual(v[0].datatype, XSD.dateTime)
 
     def test_map_by(self) -> None:
         spec = MapperSpec({"globals": {"$datasetID": "testds"}})
@@ -192,15 +196,15 @@ class TestTemplateSupport(unittest.TestCase):
             "map3": {"foo": "foobar@en"}
         }
         state = TemplateState(spec.context.new_child({"val": "foo"}), Dataset(), spec)
-        self.assertEqual(value_expand("{ val | map_by('map1')}", spec.namespaces, state), Literal("bar"))
-        self.assertEqual(value_expand("{ val | map_by('map2')}", spec.namespaces, state), URIRef("http://example.com/foo"))
-        self.assertEqual(value_expand("{ val | map_by('map3')}", spec.namespaces, state), Literal("foobar", lang="en"))
+        self.assertEqual(value_expand("{ val | map_by('map1')}", spec.namespaces, state), [Literal("bar")])
+        self.assertEqual(value_expand("{ val | map_by('map2')}", spec.namespaces, state), [URIRef("http://example.com/foo")])
+        self.assertEqual(value_expand("{ val | map_by('map3')}", spec.namespaces, state), [Literal("foobar", lang="en")])
 
     def test_casing(self) -> None:
         spec = MapperSpec({"globals": {"$datasetID": "testds"}})
         state = TemplateState(spec.context.new_child({"val": "Foo"}), Dataset(), spec)
-        self.assertEqual(value_expand("{ val | toUpper}", spec.namespaces, state), Literal("FOO"))
-        self.assertEqual(value_expand("{ val | toLower}", spec.namespaces, state), Literal("foo"))
+        self.assertEqual(value_expand("{ val | toUpper}", spec.namespaces, state), [Literal("FOO")])
+        self.assertEqual(value_expand("{ val | toLower}", spec.namespaces, state), [Literal("foo")])
 
 if __name__ == '__main__':
     unittest.main()

@@ -1,0 +1,43 @@
+from collections import ChainMap
+import unittest
+
+from rdflib import Dataset, Literal
+from rdf_mapper.lib.mapper_spec import MapperSpec
+from rdf_mapper.lib.pattern import Pattern
+from rdf_mapper.lib.template_state import TemplateState
+
+class TestPattern (unittest.TestCase):
+    def test_langstring(self):
+        pattern = Pattern("Hello@en")
+        self.assertEqual(pattern.type, "langstring")
+        self.assertEqual(pattern.lang, "en")
+        self.assertEqual(pattern.datatype, None)
+    
+    def test_datatype(self):
+        pattern = Pattern("42^^<http://www.w3.org/2001/XMLSchema#integer>")
+        self.assertEqual(pattern.type, "datatype")
+        self.assertEqual(pattern.lang, None)
+        self.assertEqual(pattern.datatype, "<http://www.w3.org/2001/XMLSchema#integer>")
+    
+    def test_variables_and_statics(self):
+        pattern = Pattern("Hello {name}!")
+        self.assertEqual(len(pattern._call_chain), 3)  # static "Hello ", variable "name", static "!"
+        self.assertTrue(callable(pattern._call_chain[0]))  # static "Hello "
+        self.assertTrue(callable(pattern._call_chain[1]))  # variable "name"
+        self.assertTrue(callable(pattern._call_chain[2]))  # static "!"
+        state = TemplateState(
+            ChainMap({"name": "Alice"}), Dataset(), MapperSpec())
+        self.assertEqual(list(pattern.execute(state)), [Literal("Hello Alice!")])
+    
+    def test_variable_function_chain(self):
+        pattern = Pattern("{greeting} {name | toUpper}!")
+        self.assertEqual(len(pattern._call_chain), 4)  # variable "greeting", static " ", variable "name", static "!"
+        state = TemplateState(
+            ChainMap({"greeting": "Hi", "name": "Bob"}), Dataset(), MapperSpec())
+        self.assertEqual(list(pattern.execute(state)), [Literal("Hi BOB!")])
+
+    def test_function_chain_with_split(self):
+        pattern = Pattern("{names | splitComma | toUpper}")
+        state = TemplateState(
+            ChainMap({"names": "Alice,Bob,Charlie"}), Dataset(), MapperSpec())
+        self.assertEqual(list(pattern.execute(state)), [Literal("ALICE"), Literal("BOB"), Literal("CHARLIE")])
