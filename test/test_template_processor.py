@@ -148,7 +148,7 @@ class TestTemplateProcessor(unittest.TestCase):
                 }]
             }),
             [self.row1], "embedded_template.ttl")
-    
+
     def test_embedded_literal_template(self) -> None:
         self.do_test(
              MapperSpec({
@@ -247,7 +247,7 @@ class TestTemplateProcessor(unittest.TestCase):
                 }]
             }),
             [self.row1], "nested_resource_spec.ttl")
-    
+
     def test_nested_literal_resource_spec(self) -> None:
         self.do_test(
             MapperSpec({
@@ -382,7 +382,7 @@ class TestTemplateProcessor(unittest.TestCase):
             [self.row1, self.row2, self.row3], "unless_filter.ttl"
         )
 
-    def test_asBoolean_producing_false(self):
+    def test_asBoolean_producing_false(self) -> None:
         self.do_test(
             MapperSpec({
                 "resources": [{
@@ -396,8 +396,8 @@ class TestTemplateProcessor(unittest.TestCase):
             [{"id": "123", "flag": "n"},{"id": "456", "flag": "y"}],
             "asBoolean_producing_false.ttl"
         )
-    
-    def test_langString_quoted_value(self):
+
+    def test_langString_quoted_value(self) -> None:
         self.do_test(
             MapperSpec({
                 "resources": [{
@@ -411,8 +411,8 @@ class TestTemplateProcessor(unittest.TestCase):
             [{"id": "123", "label": '"A quoted value"'}],
             "langString_quoted_value.ttl"
         )
-    
-    def test_langString_with_newline(self):
+
+    def test_langString_with_newline(self) -> None:
         self.do_test(
             MapperSpec({
                 "resources": [{
@@ -425,6 +425,21 @@ class TestTemplateProcessor(unittest.TestCase):
             }, auto_declare=False),
             [{"id": "123", "label": "A value with a newline\nin it"}],
             "langString_with_newline.ttl"
+        )
+
+    def test_split_in_fn_pipeline(self) -> None:
+        self.do_test(
+            MapperSpec({
+                "resources": [{
+                    "name": "Test",
+                    "properties": {
+                        "@id": "<http://example.com/{id}>",
+                        "p": "{label | split(',') | slug}"
+                    }
+                }]
+            }, auto_declare=False),
+            [{"id": "123", "label": "Value 1, Value 2"}],
+            "split_in_fn_pipeline.ttl"
         )
 
     def do_test(self, spec: MapperSpec, rows: list, expected: str | None) -> None:
