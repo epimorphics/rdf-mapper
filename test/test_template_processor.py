@@ -442,6 +442,21 @@ class TestTemplateProcessor(unittest.TestCase):
             "split_in_fn_pipeline.ttl"
         )
 
+    def test_split_in_url_pattern(self) -> None:
+        self.do_test(
+            MapperSpec({
+                "resources": [{
+                    "name": "Test",
+                    "properties": {
+                        "@id": "<http://example.com/{id}>",
+                        "p": "<http://example.com/{label | splitComma}>"
+                    }
+                }]
+            }, auto_declare=False),
+            [{"id": "123", "label": "value1, value2"}],
+            "split_in_url_pattern.ttl"
+        )
+
     def do_test(self, spec: MapperSpec, rows: list, expected: str | None) -> None:
         self.maxDiff = 5000
         output = StringIO("")

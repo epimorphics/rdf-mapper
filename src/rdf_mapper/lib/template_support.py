@@ -107,7 +107,7 @@ def pattern_expand(template: str, state: TemplateState) -> List[str]:
     pattern = Pattern(template)
     return list(map(lambda lit: lit.value if isinstance(lit, Literal) else str(lit), filter(lambda v: v is not None, pattern.execute(state))))
 
-def uri_expand(pattern: str, namespaces: Mapping[str,str], state: TemplateState) -> str:
+def uri_expand(pattern: str, namespaces: Mapping[str,str], state: TemplateState) -> List[str]:
     """Expand a URI pattern.
 
        Supports pattern forms:
@@ -121,7 +121,7 @@ def uri_expand(pattern: str, namespaces: Mapping[str,str], state: TemplateState)
     if pattern.startswith("<") and pattern.endswith(">"):
         uriref = pattern[1:-1]
         if uriref == "uuid":
-            uriref = str(uuid.uuid4())
+            urirefs = [str(uuid.uuid4())]
         elif uriref == "row":
             row = state.get('$row')
             if row:
@@ -129,16 +129,18 @@ def uri_expand(pattern: str, namespaces: Mapping[str,str], state: TemplateState)
                 if state.get('$listIndex') is not None:
                     # if nested resources in some list scan then need to include list index in generated resource ID
                     uriref = str(state.get('$listIndex')) + "/" + uriref
+                urirefs = [uriref]
             else:
-                uriref = None
+                urirefs = []
         elif uriref == "parent":
             parent = state.get("$parentID")
             if parent:
                 uriref = parent + "/" + state.get("$resourceID") # type: ignore - know that $resourceID is set
                 if state.get('$listIndex') is not None:
                     uriref = uriref + "/" + str(state.get('$listIndex'))
+                urirefs = [uriref]
             else:
-                uriref = None
+                urirefs = []
         elif _HASH_PATTERN.fullmatch(uriref):
             params = _HASH_PATTERN.fullmatch(uriref).group(1) # type: ignore
             params = _COMMA_SPLIT.split(params)
@@ -148,31 +150,23 @@ def uri_expand(pattern: str, namespaces: Mapping[str,str], state: TemplateState)
                     _hash.update(bytes(p[1:-1],"UTF-8"))
                 else:
                     _hash.update(bytes(str(state.get(p)),"UTF-8"))
-            uriref = base64.b32hexencode(_hash.digest()).decode("UTF-8")
+            urirefs = [base64.b32hexencode(_hash.digest()).decode("UTF-8")]
         else:
             uri_values = pattern_expand(uriref, state)
-            uriref = uri_values[0] if len(uri_values) > 0 else None
-            if uriref and isinstance(uriref, str):
-                uriref = _expand_curi(uriref, namespaces)
-                match = _CURI_PATTERN.fullmatch(uriref)
-                if match:
-                    ns = namespaces.get(match.group(1))
-                    if ns:
-                        uriref = ns + match.group(2)
-            else:
-                raise ValueError(f"Could not expand uri reference {pattern}")
-        if uriref:
-            if not _URI_PATTERN.fullmatch(uriref) :
-                uriref = urljoin(f"{state.get('$datasetBase')}/data/{state.get('$resourceID')}/", uriref)
-        else:
-            uriref = f"{state.get('$datasetBase')}/data/{state.get('$resourceID')}"
-        return uriref
+            urirefs = []
+            for uri_value in uri_values:
+                urirefs.append(_expand_curi(str(uri_value), namespaces))
+
+        if len(urirefs) == 0:
+            urirefs.append(f"{state.get('$datasetBase')}/data/{state.get('$resourceID')}")
+
+        return list(map(lambda uriref: urljoin(f"{state.get('$datasetBase')}/data/{state.get('$resourceID')}/", uriref) if not _URI_PATTERN.fullmatch(uriref) else uriref, urirefs)) # type: ignore - know that $datasetBase and $resourceID are set
     else:
         # Simple string, create as def in dataset namespace
         _id = f"{state.get('$datasetBase')}/def/{normalize(pattern)}"
         if state.spec.auto_declare:
             _record_implicit_prop(pattern, _id, None, state)
-        return _id
+        return [_id]
 
 def _expand_curi(uriref: str, namespaces: Mapping[str,str]) -> str:
     match = _CURI_PATTERN.fullmatch(uriref)
@@ -201,7 +195,7 @@ def value_expand(pattern: str, namespaces: Mapping[str,str], state: TemplateStat
         if pattern.startswith("<::"):
             return state.backlinks.get(pattern[3:-1])
         else:
-            return URIRef(uri_expand(pattern, namespaces, state))
+            return list(map(lambda uriref: URIRef(uriref), uri_expand(pattern, namespaces, state)))
     else:
         p = Pattern(pattern)
         return list(p.execute(state))
@@ -274,7 +268,7 @@ def process_resource_spec(name: str, rs: ResourceSpec, state: TemplateState) -> 
 
     # Check for switch of graph
     if rs.graph:
-        graph = uri_expand(rs.graph, namespaces, state)
+        graph = uri_expand(rs.graph, namespaces, state)[0]
         state = state.switch_to_graph(graph, rs.preserved_graph)
 
     # If we have no URI assignment default to the row pattern
@@ -282,7 +276,7 @@ def process_resource_spec(name: str, rs: ResourceSpec, state: TemplateState) -> 
     if id_template == "<_>":
         resource = BNode()
     else:
-        _id =uri_expand(id_template, namespaces, state)
+        _id =uri_expand(id_template, namespaces, state)[0]
         resource = URIRef(_id)
     state.backlinks[name] = resource
     state.add_to_context("$parentID", str(resource))
@@ -291,12 +285,12 @@ def process_resource_spec(name: str, rs: ResourceSpec, state: TemplateState) -> 
     type_template = rs.find_prop_defn("@type")
     if not type_template and state.spec.auto_declare:
         type_template = "<{$datasetBase}/def/{$resourceID}>"
-        _id = uri_expand(type_template, namespaces, state)
+        _id = uri_expand(type_template, namespaces, state)[0]
         _record_implicit_class(name, _id, rs.spec.get("comment"), state)
         type_uri = URIRef(_id)
         state.add_to_graph((resource, RDF.type, type_uri))
     elif type_template:
-        type_uri = URIRef(uri_expand(type_template, namespaces, state))
+        type_uri = URIRef(uri_expand(type_template, namespaces, state)[0])
         state.add_to_graph((resource, RDF.type, type_uri))
 
     # Process the properties
@@ -348,12 +342,12 @@ def process_property_value(resource: IdentifiedNode, prop: str, template: Any, s
         if prop_spec:
             (prop, template) = prop_spec.propValueTemplate(template)
             if prop_spec.cls:
-                class_ref = URIRef(uri_expand(prop_spec.cls, namespaces, state))
+                class_ref = URIRef(uri_expand(prop_spec.cls, namespaces, state)[0])
                 state.add_to_graph((resource, RDF.type, class_ref))
         else:
             raise ValueError(f"could not find property specification {prop}")
 
-    propref = URIRef(uri_expand(prop, namespaces, state))
+    propref = URIRef(uri_expand(prop, namespaces, state)[0])
     propname = prop
     if prop_spec:
         if state.spec.auto_declare:
@@ -374,7 +368,7 @@ def process_property_value(resource: IdentifiedNode, prop: str, template: Any, s
 
     if isinstance(value, list):
         for v in value:
-            state.add_to_graph((resource, propref, v))
+            state.add_to_graph((v, propref, resource) if inverse else (resource, propref, v))
     else:
         if value is not None:
             if inverse:
