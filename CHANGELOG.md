@@ -16,6 +16,7 @@ This project is currently in pre-release and a new minor version increment MAY N
 ### Fixed
 
 - Embedded resources are now loaded from imported templates (#45)
+- The results of a `split` or `splitComma` function in a template pipeline are now individually passed down to the following functions in the pipeline rather than being passed as an array. (#41)
 
 ## [0.2.5] - 2026-03-13
 
