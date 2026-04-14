@@ -16,7 +16,7 @@ class PipelineFunction(Protocol):
 class Pattern:
     
     _LANGSTRING_PATTERN = re.compile(r"^(.+)@([\w\-]+)$", re.DOTALL)
-    _DT_PATTERN = re.compile(r"^(.+)\^\^(<[^>]+>)$", re.DOTALL)
+    _DT_PATTERN = re.compile(r"^(.+)\^\^<([^>]+)>$", re.DOTALL)
     _VARPATTERN = re.compile(r"{([^}]*)}")
     _PIPEPATTERN = re.compile(r"\s*\|\s*")
 
@@ -35,11 +35,7 @@ class Pattern:
         yield from map(lambda v: self._wrap_literal(v), filter(lambda v: v is not None, values))
 
     def _wrap_literal(self, node: Identifier) -> Identifier:
-        if self.type == "langstring":
-            return Literal(str(node), lang=self.lang)
-        elif self.type == "datatype":
-            return Literal(str(node), datatype=self.datatype)
-        elif isinstance(node, Literal) and isinstance(node.value, str):
+        if isinstance(node, Literal) and isinstance(node.value, str):
             # Attempt to parse language tagged string or datatype from the literal value if it is in the form "value@lang" or "value^^datatype"
             langstring_match = self._LANGSTRING_PATTERN.match(node.value)
             if langstring_match:
@@ -59,8 +55,8 @@ class Pattern:
 
     def _parsePattern(self):
         to_parse = self._patternString
-        to_parse = self._parse_langstring(to_parse)
-        to_parse = self._parse_datatype(to_parse)
+        # to_parse = self._parse_langstring(to_parse)
+        # to_parse = self._parse_datatype(to_parse)
         self._parse_variables_and_statics(to_parse)
     
     def _parse_langstring(self, to_parse: str) -> str:

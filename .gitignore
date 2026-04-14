@@ -10,3 +10,4 @@ hse-out.ttl
 dist
 build
 .vscode
+.coverage
