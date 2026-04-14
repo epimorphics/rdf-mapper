@@ -16,14 +16,11 @@ class PipelineFunction(Protocol):
 class Pattern:
     
     _LANGSTRING_PATTERN = re.compile(r"^(.+)@([\w\-]+)$", re.DOTALL)
-    _DT_PATTERN = re.compile(r"^(.+)\^\^(<[^>]+>)$", re.DOTALL)
+    _DT_PATTERN = re.compile(r"^(.+)\^\^<([^>]+)>$", re.DOTALL)
     _VARPATTERN = re.compile(r"{([^}]*)}")
     _PIPEPATTERN = re.compile(r"\s*\|\s*")
 
     def __init__(self, pattern: str):
-        self.type = "plain"
-        self.lang = None
-        self.datatype = None
         self._patternString = pattern
         self._call_chain: list[Callable[[Identifier|None, TemplateState], Iterator[Identifier]]] = []
         self._parsePattern()
@@ -35,11 +32,7 @@ class Pattern:
         yield from map(lambda v: self._wrap_literal(v), filter(lambda v: v is not None, values))
 
     def _wrap_literal(self, node: Identifier) -> Identifier:
-        if self.type == "langstring":
-            return Literal(str(node), lang=self.lang)
-        elif self.type == "datatype":
-            return Literal(str(node), datatype=self.datatype)
-        elif isinstance(node, Literal) and isinstance(node.value, str):
+        if isinstance(node, Literal) and isinstance(node.value, str):
             # Attempt to parse language tagged string or datatype from the literal value if it is in the form "value@lang" or "value^^datatype"
             langstring_match = self._LANGSTRING_PATTERN.match(node.value)
             if langstring_match:
@@ -59,25 +52,7 @@ class Pattern:
 
     def _parsePattern(self):
         to_parse = self._patternString
-        to_parse = self._parse_langstring(to_parse)
-        to_parse = self._parse_datatype(to_parse)
         self._parse_variables_and_statics(to_parse)
-    
-    def _parse_langstring(self, to_parse: str) -> str:
-        langstring_match = self._LANGSTRING_PATTERN.match(to_parse)
-        if langstring_match:
-            self.type = "langstring"
-            self.lang = langstring_match.group(2)
-            return langstring_match.group(1)
-        return to_parse
-        
-    def _parse_datatype(self, to_parse: str) -> str:
-        dt_match = self._DT_PATTERN.match(to_parse)
-        if dt_match:
-            self.type = "datatype"
-            self.datatype = dt_match.group(2)
-            return dt_match.group(1)
-        return to_parse
     
     def _parse_variables_and_statics(self, to_parse: str):
         last_index = 0

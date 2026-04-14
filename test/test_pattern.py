@@ -9,15 +9,17 @@ from rdf_mapper.lib.template_state import TemplateState
 class TestPattern (unittest.TestCase):
     def test_langstring(self):
         pattern = Pattern("Hello@en")
-        self.assertEqual(pattern.type, "langstring")
-        self.assertEqual(pattern.lang, "en")
-        self.assertEqual(pattern.datatype, None)
+        # self.assertEqual(pattern.type, "langstring")
+        # self.assertEqual(pattern.lang, "en")
+        # self.assertEqual(pattern.datatype, None)
+        self.assertEqual(list(pattern.execute(TemplateState(ChainMap(), Dataset(), MapperSpec()))), [Literal("Hello", lang="en")])
     
     def test_datatype(self):
         pattern = Pattern("42^^<http://www.w3.org/2001/XMLSchema#integer>")
-        self.assertEqual(pattern.type, "datatype")
-        self.assertEqual(pattern.lang, None)
-        self.assertEqual(pattern.datatype, "<http://www.w3.org/2001/XMLSchema#integer>")
+        # self.assertEqual(pattern.type, "datatype")
+        # self.assertEqual(pattern.lang, None)
+        # self.assertEqual(pattern.datatype, "<http://www.w3.org/2001/XMLSchema#integer>")
+        self.assertEqual(list(pattern.execute(TemplateState(ChainMap(), Dataset(), MapperSpec()))), [Literal("42", datatype="http://www.w3.org/2001/XMLSchema#integer")])
     
     def test_variables_and_statics(self):
         pattern = Pattern("Hello {name}!")
@@ -28,6 +30,15 @@ class TestPattern (unittest.TestCase):
         state = TemplateState(
             ChainMap({"name": "Alice"}), Dataset(), MapperSpec())
         self.assertEqual(list(pattern.execute(state)), [Literal("Hello Alice!")])
+    
+    def test_datatype_as_variable(self):
+        pattern = Pattern("{@value}^^<{@type}>")
+        # self.assertEqual(pattern.type, "datatype")
+        state = TemplateState(
+            ChainMap({"@value": "42", "@type": "http://www.w3.org/2001/XMLSchema#integer"}), Dataset(), MapperSpec())
+        actual = list(pattern.execute(state))
+        print(actual)
+        self.assertEqual(actual, [Literal("42", datatype="http://www.w3.org/2001/XMLSchema#integer")])
     
     def test_variable_function_chain(self):
         pattern = Pattern("{greeting} {name | toUpper}!")
