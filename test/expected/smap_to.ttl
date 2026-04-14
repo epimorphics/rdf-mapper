@@ -1,0 +1,6 @@
+@prefix def: <https://epimorphics.com/datasets/None/def/> .
+@prefix skos: <http://www.w3.org/2004/02/skos/core#> .
+
+<http://example.com/123> a skos:Concept ;
+    def:p "barley (winter)"@en .
+

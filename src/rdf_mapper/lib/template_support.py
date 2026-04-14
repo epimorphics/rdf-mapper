@@ -13,6 +13,7 @@ import datetime
 import hashlib
 import logging
 import re
+import traceback
 import uuid
 from collections.abc import Callable, Mapping
 from itertools import chain
@@ -307,6 +308,8 @@ def process_resource_spec(name: str, rs: ResourceSpec, state: TemplateState) -> 
                 else:
                     logging.warning(f"Skipping {prop} on row {state.get('$row')} because {ex}")
         except Exception as err:
+            print(f"Unexpected error processing property {prop} on row {state.get('$row')}")
+            print(traceback.format_exc())
             raise ValueError(f"Failed to process property {prop} on row {state.get('$row')}: {err}") from err
     return resource
 
@@ -428,12 +431,12 @@ def map_to(data: Any, state: TemplateState, rsname: str) -> List[Identifier | No
 register("map_to", map_to)
 
 def smap_to(data: Any, state: TemplateState, rsname: str) -> List[Identifier | None]:
-    local_state = TemplateState(ChainMap(data), state.dataset, state.spec, state.preserved_graphs, abort_on_error=state.abort_on_error)
     if not data:
         return [None]
     if isinstance(data, list):
-        return list(chain(smap_to(d, local_state, rsname)[0] for ix, d in enumerate(data)))  # type: ignore - TODO better typing for single depth list
+        return list(chain(smap_to(d, state, rsname)[0] for ix, d in enumerate(data)))  # type: ignore - TODO better typing for single depth list
     rs = state.spec.embedded_resources.get(rsname)
+    local_state = state.with_context({})
     if not rs:
             raise ValueError(f"smap_to could not find embedded template called {rsname}")
     if not isinstance(data, dict):
