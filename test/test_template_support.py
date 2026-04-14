@@ -3,7 +3,7 @@ import unittest
 
 from rdflib import XSD, Dataset, Literal, URIRef
 
-from rdf_mapper.lib.mapper_spec import MapperSpec
+from rdf_mapper.lib.mapper_spec import MapperSpec, ResourceSpec
 from rdf_mapper.lib.template_state import TemplateState
 from rdf_mapper.lib.template_support import (
     pattern_expand,
@@ -207,6 +207,33 @@ class TestTemplateSupport(unittest.TestCase):
         state = TemplateState(spec.context.new_child({"val": "Foo"}), Dataset(), spec)
         self.assertEqual(value_expand("{ val | toUpper}", spec.namespaces, state), [Literal("FOO")])
         self.assertEqual(value_expand("{ val | toLower}", spec.namespaces, state), [Literal("foo")])
+    
+    def test_smap_to(self) -> None:
+        spec = MapperSpec({"globals": {"$datasetID": "testds"}})
+        spec.embedded_resources = {
+            "dtLit": ResourceSpec({
+                "name": "dtLit",
+                "requires": {
+                    "@value": None,
+                    "@type": None,
+                },
+                "pattern": "{@value}^^<{@type}>" 
+            }),
+            "ltLit": ResourceSpec({
+                "name": "ltLit",
+                "requires": {
+                    "@value": None,
+                    "@language": None,
+                },
+                "pattern": "{@value}@{@language}"
+            }),
+        }
+        context = spec.context.new_child({"@type": "http://example.org/Foo","data": {"@value": "value", "@language": "en"}})
+        state = TemplateState(context, Dataset(), spec)
+        self.assertEqual(value_expand("{data | map_to('dtLit')}", spec.namespaces, state), [Literal("value", datatype="http://example.org/Foo")])
+        self.assertEqual(value_expand("{data | smap_to('dtLit')}", spec.namespaces, state), [])
+        self.assertEqual(value_expand("{data | map_to('ltLit')}", spec.namespaces, state), [Literal("value", lang="en")])
+        self.assertEqual(value_expand("{data | smap_to('ltLit')}", spec.namespaces, state), [Literal("value", lang="en")])
 
 if __name__ == '__main__':
     unittest.main()

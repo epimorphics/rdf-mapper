@@ -16,7 +16,7 @@ import re
 import uuid
 from collections.abc import Callable, Mapping
 from itertools import chain
-from typing import Any, List, Union
+from typing import Any, ChainMap, List, Union
 from urllib.parse import urljoin
 
 import dateparser
@@ -426,6 +426,21 @@ def map_to(data: Any, state: TemplateState, rsname: str) -> List[Identifier | No
     return [_create_resource(data, state, rs)]
 
 register("map_to", map_to)
+
+def smap_to(data: Any, state: TemplateState, rsname: str) -> List[Identifier | None]:
+    local_state = TemplateState(ChainMap(data), state.dataset, state.spec, state.preserved_graphs, abort_on_error=state.abort_on_error)
+    if not data:
+        return [None]
+    if isinstance(data, list):
+        return list(chain(smap_to(d, local_state, rsname)[0] for ix, d in enumerate(data)))  # type: ignore - TODO better typing for single depth list
+    rs = state.spec.embedded_resources.get(rsname)
+    if not rs:
+            raise ValueError(f"smap_to could not find embedded template called {rsname}")
+    if not isinstance(data, dict):
+        raise ValueError(f"smap_to expecting data to be a dict but found {data}")
+    return [_create_resource(data, local_state, rs)]
+
+register("smap_to", smap_to)
 
 def map_by(data: Any, state: TemplateState, mapping_name: str) -> Identifier | list[Identifier] | None:
     mapping = state.spec.mappings.get(mapping_name)
