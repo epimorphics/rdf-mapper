@@ -456,6 +456,25 @@ class TestTemplateProcessor(unittest.TestCase):
             [{"id": "123", "label": "value1, value2"}],
             "split_in_url_pattern.ttl"
         )
+    
+    def test_smap_to(self) -> None:
+        self.do_test(
+            MapperSpec({
+                "resources" : [{
+                    "name": "registration",
+                    "properties": {
+                        "@id" : "<http://example.com/{id}>",
+                        "@type" : "<skos:Concept>",
+                        "p" : "{croplink | smap_to('crop-situation')}"
+                    }
+                }],
+                "embedded" : [{
+                    "name": "crop-situation",
+                    "requires": {"crop": None},
+                    "pattern" : "{crop} ({qualifier})@en"
+                }]
+            }, auto_declare=False),
+            [self.row1], "smap_to.ttl")
 
     def do_test(self, spec: MapperSpec, rows: list, expected: str | None) -> None:
         self.maxDiff = 5000

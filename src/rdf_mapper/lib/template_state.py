@@ -61,6 +61,13 @@ class TemplateState:
         child.backlinks = self.backlinks
         return child
 
+    def with_context(self, context: dict) -> TemplateState:
+        """Return a new template state which mirrors this but with a separate set of context bindings."""
+        child = TemplateState(ChainMap(context), self.dataset, self.spec,
+                              self.preserved_graphs, self.reconcile_stack, self.abort_on_error)
+        child.backlinks = self.backlinks
+        return child
+
     def record_reconcile_request(self, record: ReconciliationRecord) -> None:
         """Record a reconciliation request, which might or might not have already been attempted and succeeded."""
         self.reconcile_stack[record.lookup_key()] = record
