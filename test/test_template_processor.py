@@ -1,6 +1,8 @@
 import unittest
 from io import StringIO
 
+from rdflib.term import URIRef
+
 from rdf_mapper.lib.mapper_spec import MapperSpec
 from rdf_mapper.lib.template_processor import DEFAULT_GRAPH, TemplateProcessor
 
@@ -12,6 +14,7 @@ class TestTemplateProcessor(unittest.TestCase):
     row2 = {"$row": 2, "$file": "file", "id": "456", "label" : "label2"}
     row3 = {"$row": 3, "$file": "file", "id": "789", "label" : "label1"}
     row4 = {"$row": 4, "$file": "file", "id": "444", "flag" : "n"}
+    row5 = {"$row": 5, "$file": "file", "id": "555", "flag" : "y"}
 
     def test_default_mapping(self) -> None:
         self.do_test(
@@ -531,6 +534,31 @@ class TestTemplateProcessor(unittest.TestCase):
 
         proc.finalize("update")
         self.assertEqual(proc.error_count, 0)
+    
+    def test_no_abort_when_function_returns_none(self) -> None:
+        spec = MapperSpec({
+            "globals":{
+                "$datasetID": "test"
+            },
+            "resources": [{
+                "name": "Test",
+                "properties": {
+                    "@id": "<http://example.com/{id}>",
+                    "p": "{flag|expr('x if x is \"y\" else None')}"
+                }
+            }]
+        }, auto_declare=False)
+        output = StringIO("")
+        proc = TemplateProcessor(spec, "test", output, abort_on_error=True)
+
+        for row in [self.row4, self.row5]:
+            proc.process_row(row)
+
+        proc.finalize("update")
+        self.assertEqual(proc.error_count, 0)
+        print(proc.dataset.serialize(format="trig"))
+        self.assertEqual(len(list(proc.dataset.triples((URIRef("http://example.com/444"), URIRef("https://epimorphics.com/datasets/test/def/p"), None)))), 0)
+        self.assertEqual(len(list(proc.dataset.triples((URIRef("http://example.com/555"), URIRef("https://epimorphics.com/datasets/test/def/p"), None)))), 1)
 
 
 def load_expected(name: str) -> str:
