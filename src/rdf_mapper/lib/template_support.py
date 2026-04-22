@@ -420,13 +420,13 @@ def map_to(data: Any, state: TemplateState, rsname: str) -> List[Identifier | No
     if not data:
         return [None]
     if isinstance(data, list):
-        return list(chain(map_to(d, state.child({"$listIndex": ix}), rsname)[0] for ix, d in enumerate(data)))  # type: ignore - TODO better typing for single depth list
+        return list(chain(map_to(d, state.child({"$listIndex": ix, "$this": d}), rsname)[0] for ix, d in enumerate(data)))  # type: ignore - TODO better typing for single depth list
     rs = state.spec.embedded_resources.get(rsname)
     if not rs:
             raise ValueError(f"map_to could not find embedded template called {rsname}")
     if not isinstance(data, dict):
         raise ValueError(f"map_to expecting data to be a dict but found {data}")
-    return [_create_resource(data, state, rs)]
+    return [_create_resource(data, state.child({"$this": data}), rs)]
 
 register("map_to", map_to)
 
@@ -436,7 +436,7 @@ def smap_to(data: Any, state: TemplateState, rsname: str) -> List[Identifier | N
     if isinstance(data, list):
         return list(chain(smap_to(d, state, rsname)[0] for ix, d in enumerate(data)))  # type: ignore - TODO better typing for single depth list
     rs = state.spec.embedded_resources.get(rsname)
-    local_state = state.with_context({})
+    local_state = state.with_context({"$this": data})
     if not rs:
             raise ValueError(f"smap_to could not find embedded template called {rsname}")
     if not isinstance(data, dict):

@@ -13,6 +13,8 @@ This project is currently in pre-release and a new minor version increment MAY N
 - Added support for resource templates that generate a literal. (#42)
 - Added new built-in `slug` function to convert strings to "slugs" that can be used in a IRI path segment.
 - Added new built-in `smap_to` function to apply a template to a child object or list of objects without any inherited context properties.
+- Updated `map_to` and `smap_to` functions to now include the object being mapped as an additional value in the context under the key `$this`
+- Added new built-in `to_entries` that expands an object to a list of key/value pairs, represented as a list of objects with a `$key` and `$value` property.
 
 ### Fixed
 

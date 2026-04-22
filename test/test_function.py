@@ -53,3 +53,10 @@ class TestBuiltins(unittest.TestCase):
         self.assertEqual(evaluate("slug", Literal('Hello World'), TemplateState(ChainMap(), Dataset(), MapperSpec())), 'hello-world')
         self.assertEqual(evaluate("slug", 123, TemplateState(ChainMap(), Dataset(), MapperSpec())), '123')
         self.assertRaises(ValueError, lambda: evaluate("slug", None, TemplateState(ChainMap(), Dataset(), MapperSpec())))
+    
+    def test_to_entries(self) -> None:
+        data = {"name": "Alice", "age": 30, "$internal": "should be ignored"}
+        result = evaluate("to_entries", data, TemplateState(ChainMap(), Dataset(), MapperSpec()))
+        expected = [{"$key": "name", "$value": "Alice"}, {"$key": "age", "$value": 30}]
+        self.assertEqual(result, expected)
+        self.assertRaises(ValueError, lambda: evaluate("to_entries", 'not a dict', TemplateState(ChainMap(), Dataset(), MapperSpec())))
