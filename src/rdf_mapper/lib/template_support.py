@@ -207,6 +207,18 @@ def process_resource_spec(name: str, rs: ResourceSpec, state: TemplateState) -> 
     state.add_to_context("$resourceID", name)
     namespaces = state.spec.namespaces
 
+    if rs.guard:
+        # If the resource spec has a guard condition, evaluate it and skip if it is either None or False
+        eval_test_result = eval('locals()', {}, state.context)
+        try:
+            eval_result = eval(rs.guard, {}, state.context)
+            if eval_result is None or eval_result is False:
+                logging.warning(f"Skipping resource {rs.name} on row {state.get('$row')} because guard condition {rs.guard} evaluated to False.")
+                return None
+        except Exception as ex:
+            logging.error(f"Error evaluating guard condition {rs.guard} for resource {rs.name} on row {state.get('$row')}: {ex}")
+            return None
+
     # If the resource spec has a requires dict, check the row for matching values
     if rs.requires:
         for key in rs.requires:
