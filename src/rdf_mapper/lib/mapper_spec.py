@@ -205,6 +205,7 @@ class ResourceSpec:
             self.properties = _listify(props)
             self.requires = spec.get("requires")
             self.unless = spec.get("unless")
+            self.guard = spec.get("guard")
             if self.requires is not None and not isinstance(self.requires, dict):
                 _error(f"Resource spec requires must be a dictionary, was {self.requires}")
         elif isinstance(spec, dict) and "name" in spec and "pattern" in spec:
@@ -214,6 +215,7 @@ class ResourceSpec:
             self.properties = []
             self.requires = spec.get("requires")
             self.unless = spec.get("unless")
+            self.guard = spec.get("guard")
             if self.requires is not None and not isinstance(self.requires, dict):
                 _error(f"Resource spec requires must be a dictionary, was {self.requires}")
         else:

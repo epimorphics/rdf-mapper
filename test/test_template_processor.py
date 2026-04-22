@@ -478,6 +478,36 @@ class TestTemplateProcessor(unittest.TestCase):
                 }]
             }, auto_declare=False),
             [self.row1], "smap_to.ttl")
+    
+    def test_guard_condition(self) -> None:
+        self.do_test(
+            MapperSpec({
+                "resources": [{
+                    "name": "Test",
+                    "guard": "'x' in locals() and x == 'foo'",
+                    "properties": {
+                        "@id": "<http://example.com/{id}>",
+                        "p": "{x}"
+                    }
+                }]
+            }, auto_declare=False),
+            [self.row1, self.row2], "guard_condition.ttl"
+        )
+    
+    def test_guard_condition_false(self) -> None:
+        self.do_test(
+            MapperSpec({
+                "resources": [{
+                    "name": "Test",
+                    "guard": "label == 'foo'",
+                    "properties": {
+                        "@id": "<http://example.com/{id}>",
+                        "p": "{x}"
+                    }
+                }]
+            }, auto_declare=False),
+            [self.row2], "guard_condition_false.ttl"
+        )
 
     def do_test(self, spec: MapperSpec, rows: list, expected: str | None) -> None:
         self.maxDiff = 5000

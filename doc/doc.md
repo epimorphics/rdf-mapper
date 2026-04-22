@@ -133,16 +133,17 @@ The imported modules may have other placeholder fields (`ontology_source`, `cons
 Resource definitions can have the following fields:
 
 | Field | Description |
-|---|---|
+| --- | --- |
 | `name` | Short name for the resource. If using auto-generate then this will be the local name of the class URI and its `rdfs:label`. Also used for back references within templates. Required. |
 | `comment` | Descriptive comment, will be used as `rdfs:comment` on any auto generated class definition. |
-| `requires` | An optional dictionary mapping column names to the value(s) required to be in that column for the resource mapping to be applied. A list of values may be provided, in which case the column must contain at least one of the specified values. If no value is provided, then the column is required to have any non-empty value.
-| `unless` | An optional dictionary mapping column names to the value(s) required to *not* be in that column for the resource mapping to be applied. A list of values may be provided, in which case the column mus tnot contain any of the specified values. If bo value is provided, then the column must have no value or an empty value for the resource to be processed.
+| `guard` | Python guard expression to control execution of the resource template. If present, the guard is evaluated with all of the values of the current row available in the evaluation context as local variables. If the result of the evaluation of the guard is either None or False, then the resource template will not be applied. If the evaluation raises any Exception, this will be logged as an error and the resource template will be skipped. |
+| `requires` | An optional dictionary mapping column names to the value(s) required to be in that column for the resource mapping to be applied. A list of values may be provided, in which case the column must contain at least one of the specified values. If no value is provided, then the column is required to have any non-empty value. |
+| `unless` | An optional dictionary mapping column names to the value(s) required to *not* be in that column for the resource mapping to be applied. A list of values may be provided, in which case the column must not contain any of the specified values. If no value is provided, then the column must have no value or an empty value for the resource to be processed. |
 | `@graph` | Optional URI of a graph to which the resource template should be written. Can be a URI template. If not specified writes to the current `$graph` setting which defaults to the default graph. When using `update` format then any existing graph contents will be replaced. |
 | `@graphAdd` | As for `@graph` except that any existing graph contents will be preserved. |
 | `properties` | List of property/value templates defining the properties to attach to the generated resource |
 
-Entries in `one_offs` are identical to `resources` definitions, the difference is in their application, one offs are only generated once for the run and are a way to create static resources that the rows can refer to. 
+Entries in `one_offs` are identical to `resources` definitions, the difference is in their application, one offs are only generated once for the run and are a way to create static resources that the rows can refer to.
 
 When the property/value definitions are processed then missing variables referenced in the template will cause that property to be skipped but will not abort the resource or the whole role. In this way templates can safely refer to optional values in the source data. Use the `requires` guard noted above if the entire resources _should_ be skipped if some source values are missing. When property values or resources are skipped this fact is recorded in the `mapping.log` file (or standard error if logging has not been configured) to help with debugging unexpectedly missing values.
 
