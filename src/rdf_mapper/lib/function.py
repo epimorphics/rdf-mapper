@@ -172,3 +172,9 @@ def hash(arg: str | None, state: TemplateState, *keys: str) -> str:  # noqa: A00
 
 def now(_: Any, state: TemplateState) -> Literal:
     return Literal(datetime.datetime.now().isoformat(), datatype=XSD.dateTime)
+
+def to_entries(data: Any, state: TemplateState) -> list[dict[str, Any]]:
+    if not isinstance(data, dict):
+        raise ValueError(f"to_entries expecting data to be a dict but found {data}")
+    return [{"$key": key, "$value": value} for key, value in filter(lambda item: not item[0].startswith("$"), data.items())]
+
