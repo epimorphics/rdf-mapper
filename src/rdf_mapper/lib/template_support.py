@@ -24,7 +24,7 @@ import dateparser
 from rdflib import RDF, SKOS, XSD, BNode, IdentifiedNode, Literal, Node, URIRef, term
 from rdflib.term import Identifier
 
-from rdf_mapper.lib.mapper_spec import PropSpec, ResourceSpec
+from rdf_mapper.lib.mapper_spec import PropSpec, ResourceModel, ResourceSpec
 from rdf_mapper.lib.reconcile import MatchResult, ReconcileRequest, requestReconcile
 from rdf_mapper.lib.template_state import ReconciliationRecord, TemplateState
 from rdf_mapper.lib.pattern import Pattern
@@ -268,7 +268,7 @@ def process_resource_spec(name: str, rs: ResourceSpec, state: TemplateState) -> 
                 )
                 return None
 
-    if 'pattern' in rs.spec:
+    if rs.pattern:
         pattern = rs.pattern
         if not isinstance(pattern, str):
             raise ValueError(f"Resource spec pattern must be a string, was {pattern}")
@@ -299,7 +299,7 @@ def process_resource_spec(name: str, rs: ResourceSpec, state: TemplateState) -> 
     if not type_template and state.spec.auto_declare:
         type_template = "<{$datasetBase}/def/{$resourceID}>"
         _id = uri_expand(type_template, namespaces, state)[0]
-        _record_implicit_class(name, _id, rs.spec.get("comment"), state)
+        _record_implicit_class(name, _id, rs._model.comment, state)
         type_uri = URIRef(_id)
         state.add_to_graph((resource, RDF.type, type_uri))
     elif type_template:
@@ -366,7 +366,7 @@ def process_property_value(resource: IdentifiedNode, prop: str, template: Any, s
     propname = prop
     if prop_spec:
         if state.spec.auto_declare:
-            _record_implicit_prop(prop_spec.name,  str(propref), prop_spec.spec.get("comment"), state)
+            _record_implicit_prop(prop_spec.name,  str(propref), prop_spec.comment, state)
         propname = prop_spec.name
 
     if isinstance(template, str):
@@ -374,9 +374,7 @@ def process_property_value(resource: IdentifiedNode, prop: str, template: Any, s
             template = "{" + prop + "}"
         value = value_expand(template, namespaces, state.child({"$prop": propname}))
     elif isinstance(template, dict):
-        rs = ResourceSpec(template)
-        if not rs.name:
-            raise ValueError(f"Resource spec for property {prop} has no name")
+        rs = ResourceSpec(ResourceModel(**template))
         value = process_resource_spec(rs.name, rs, state)
     else:
         raise NotImplementedError("Implement inline property specs")
@@ -395,29 +393,29 @@ def process_property_value(resource: IdentifiedNode, prop: str, template: Any, s
             raise ValueError(f"Value missing for required property {prop_spec.name}, pattern: {template}")
         # else do nothing, missing value but not required
 
-_AUTO_CLASS_SPEC = ResourceSpec({
-    "name": "AUTO_CLASS",
-    "properties": {
+_AUTO_CLASS_SPEC = ResourceSpec(ResourceModel(
+    name="AUTO_CLASS",
+    properties={
         "@id" : "<{id}>",
         "@type" : "<owl:Class>",
         "<rdfs:label>": "{label}",
         "<rdfs:comment>": "{comment}",
     }
-})
+))
 
 def _record_implicit_class(name: str, _id: str, comment: str | None, state: TemplateState) -> None:
     if not state.record_auto_emit("class", name):
         _create_resource({"id" : _id, "label": name, "comment": comment}, state, _AUTO_CLASS_SPEC)
 
-_AUTO_PROP_SPEC = ResourceSpec({
-    "name": "AUTO_PROP",
-    "properties": {
+_AUTO_PROP_SPEC = ResourceSpec(ResourceModel(
+    name="AUTO_PROP",
+    properties={
         "@id" : "<{id}>",
         "@type" : "<rdf:Property>",
         "<rdfs:label>": "{label}",
         "<rdfs:comment>": "{comment}",
     }
-})
+))
 
 def _record_implicit_prop(name: str, _id: str, comment: str | None, state: TemplateState) -> None:
     if not state.record_auto_emit("prop", name):
@@ -473,12 +471,10 @@ def map_by(data: Any, state: TemplateState, mapping_name: str) -> Identifier | l
 
 register("map_by", map_by)
 
-_PROXY_CONCEPT_SPEC = {
-    "properties" : {
-        "@id" : "<hash(key,keytype)>",
-        "@type" : "<{keytype}>",
-        "<skos:prefLabel>" : "{key}"
-    }
+_PROXY_CONCEPT_PROPS = {
+    "@id" : "<hash(key,keytype)>",
+    "@type" : "<{keytype}>",
+    "<skos:prefLabel>" : "{key}"
 }
 
 def reconcile(key: str, state: TemplateState, name: str, _type: str | None = None, endpoint: str | None = None,
@@ -509,7 +505,7 @@ def reconcile(key: str, state: TemplateState, name: str, _type: str | None = Non
             else:
                 logging.error(f"Reconciliation failed for {keydesc} - {str(matchResult)}")
                 if not skip_placeholders:
-                    rs = ResourceSpec(_PROXY_CONCEPT_SPEC | {"name" : name})
+                    rs = ResourceSpec(ResourceModel(name=name, properties=_PROXY_CONCEPT_PROPS))
                     reconcile_spec = {"key" : key, "keytype" : _type or str(SKOS.Concept)}
                     _id =  _create_resource(reconcile_spec, state, rs)
                     if not _id:
@@ -548,27 +544,31 @@ _AUTO_CONCEPT_HASH_SPEC = {
     }
 }
 
-_AUTO_CONCEPT_SPEC = ResourceSpec({
-    "name" : "autoCVlabel",
-    "properties" : {
-        "@id" : "<{id}>",
-        "@type" : "<skos:Concept>",
-        "<skos:prefLabel>" : "{label}",
-        "<skos:inScheme>" : "<{schemeID}>",
-        "<skos:topConceptOf>": "<{schemeID}>",
-        "^<skos:hasTopConcept>" : "<{schemeID}>",
-    }
-})
+_AUTO_CONCEPT_SPEC = ResourceSpec(
+    ResourceModel(
+        name="autoCVlabel",
+        properties={
+            "@id" : "<{id}>",
+            "@type" : "<skos:Concept>",
+            "<skos:prefLabel>" : "{label}",
+            "<skos:inScheme>" : "<{schemeID}>",
+            "<skos:topConceptOf>": "<{schemeID}>",
+            "^<skos:hasTopConcept>" : "<{schemeID}>",
+        }
+    )
+)
 
-_AUTO_CONCEPT_SCHEME_SPEC = ResourceSpec({
-    "name" : "autoCVscheme",
-    "properties" : {
-        "@id" : "<{id}>",
-        "@type" : "<skos:ConceptScheme>",
-        "<dct:title>" : "{name}",
-        "<dct:description>" : "Automatically generated concept scheme {name}"
-    }
-})
+_AUTO_CONCEPT_SCHEME_SPEC = ResourceSpec(
+    ResourceModel(
+        name="autoCVscheme",
+        properties={
+            "@id" : "<{id}>",
+            "@type" : "<skos:ConceptScheme>",
+            "<dct:title>" : "{name}",
+            "<dct:description>" : "Automatically generated concept scheme {name}"
+        }
+    )
+)
 
 def autoCV(label: str, state: TemplateState, cv_name: str, cv_type: str | None = None) -> IdentifiedNode | None:
     """Generate a skos concept, and associated scheme, for the given level or reuse one we did earlier."""

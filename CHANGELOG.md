@@ -8,6 +8,11 @@ This project is currently in pre-release and a new minor version increment MAY N
 
 ## [Unreleased]
 
+### Changed
+
+- BREAKING: The constructors for building `MapperSpec` instances and related instances such as `ResourceSpec` now take a Pydantic model instance rather than a Python dict. The `MapperSpec` constructor will still accept a dict, which will be used internally to initialise an instance of the model, but the other `*Spec` classes will only accept `*Model` instances.
+- BREAKING: The function for registering extension functions is now `rdf_mapper.lib.function.regsiter` (was `rdf_mapper.lib.template_support.register_fn`)
+
 ### Added
 
 - Added support for resource templates that generate a literal. (#42)

@@ -3,7 +3,7 @@
 
 from __future__ import annotations
 
-from enum import Enum
+from enum import Enum, StrEnum
 import importlib.util
 import os
 import sys
@@ -12,24 +12,35 @@ from typing import Any, NoReturn, TextIO, cast
 
 import yaml
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, model_validator
 
-class BaseResourceModel(BaseModel):
+class ResourceModel(BaseModel):
     name: str
+    comment: str | None = None
     requires: dict[str, Any] | None = None
     unless: dict[str, Any] | None = None
     guard: str | None = None
-
-class LiteralResourceModel(BaseResourceModel):
-    pattern: str
-
-class ResourceModel(BaseResourceModel):
     graph: str | None = Field(default=None, alias="@graph")
-    preserved_graph: str | None = None
+    preserved_graph: bool = True
     graphAdd: str | None = Field(default=None, alias="@graphAdd")
-    properties: list[dict[str, Any]] | dict[str, Any]
+    properties: list[dict[str, Any]] | dict[str, Any] = []
+    pattern: str | None = None
 
-class PropTypeEnum(Enum):
+    @model_validator(mode="after")
+    def check_pattern_or_properties(self) -> ResourceModel:
+        if self.pattern and self.properties:
+            raise ValueError("Resource spec cannot have both pattern and properties")
+        if not self.pattern and not self.properties:
+            raise ValueError("Resource spec must have either pattern or properties")
+        return self
+    
+    @model_validator(mode="after")
+    def check_graph_and_graphAdd(self) -> ResourceModel:
+        if self.graph and self.graphAdd:
+            raise ValueError("Resource spec cannot have both @graph and @graphAdd")
+        return self
+
+class PropTypeEnum(StrEnum):
     Int = "Int"
     Decimal = "Decimal"
     Date = "Date"
@@ -38,6 +49,7 @@ class PropTypeEnum(Enum):
 
 class PropModel(BaseModel):
     name: str
+    comment: str | None = None
     prop: str
     type: PropTypeEnum | None = None
     cls: str = Field(alias="class")
@@ -49,10 +61,10 @@ class PropModel(BaseModel):
 class MapperModel(BaseModel):
     globals: dict[str, Any] = {}
     namespaces: dict[str, str] = {}
-    one_offs: list[LiteralResourceModel|ResourceModel] = []
-    resources: list[LiteralResourceModel|ResourceModel] = []
+    one_offs: list[ResourceModel] = []
+    resources: list[ResourceModel] = []
     mappings: dict[str, dict[str, str]] = {}
-    embedded: list[LiteralResourceModel|ResourceModel] = []
+    embedded: list[ResourceModel] = []
     properties: list[PropModel] = []
     imports: list[str] = []
 
@@ -74,7 +86,7 @@ class MapperSpec:
         "org": "http://www.w3.org/ns/org#",
     }
 
-    def __init__(self, spec: MapperModel | dict, auto_declare: bool = True) -> None:
+    def __init__(self, spec: MapperModel | dict = MapperModel(), auto_declare: bool = True) -> None:
         if isinstance(spec, dict):
             model = MapperModel(**spec)
         else:
@@ -83,16 +95,16 @@ class MapperSpec:
         self.auto_declare = auto_declare
         self.globals = model.globals
         self.context: ChainMap[str, Any] = ChainMap(self.globals, self.builtins)
-        self.namespaces = ChainMap(model.namespaces, self.builtinNamespaces)
-        self.one_offs = [ResourceSpec(m) for m in model.one_offs]
+        self.namespaces: ChainMap[str, str] = ChainMap(model.namespaces, self.builtinNamespaces)
+        self.one_offs : list[ResourceSpec] = [ResourceSpec(m) for m in model.one_offs]
         self._init_defaults()
-        self.resources = [ResourceSpec(m) for m in model.resources]
+        self.resources: list[ResourceSpec] = [ResourceSpec(m) for m in model.resources]
         self.mappings = model.mappings
-        self.embedded_resources = {}
+        self.embedded_resources : dict[str, ResourceSpec] = {}
         for e in model.embedded:
             rs = ResourceSpec(e)
             self.embedded_resources[rs.name] = rs
-        self.propertySpecs = {}
+        self.propertySpecs : dict[str, PropSpec] = {}
         for p in model.properties:
             ps = PropSpec(p)
             self.propertySpecs[ps.name] = ps
@@ -146,8 +158,8 @@ class MapperSpec:
         return MapperSpec(MapperModel(
                 globals =  other.globals | self.globals,
                 namespaces = dict(other.namespaces) | dict(self.namespaces),
-                properties = [ps.spec for ps in merged_ps],
-                embedded = [es.spec for es in merged_es],
+                properties = [ps._model for ps in merged_ps],
+                embedded = [es._model for es in merged_es],
                 one_offs = [oo._model for oo in merged_oo],
                 mappings = merged_mppings,
             )
@@ -169,21 +181,22 @@ def _find_file(fname: str) -> str | None:
 
 def load_template(file: TextIO) -> MapperSpec:
     with file:
-        return MapperSpec(yaml.safe_load(file))
+        return MapperSpec(MapperModel.model_validate(yaml.safe_load(file)))
 
 
 class PropSpec:
     def __init__(self, model: PropModel) -> None:
         self._model = model
         self.name = model.name
+        self.comment = model.comment
         self.prop = model.prop
         self.type = None
         ty = model.type
         if ty:
-            if ty in ["Int", "Decimal", "Date", "Datetime", "DateOrDatetime"]:
-                self.type = ty
+            if str(ty) in ["Int", "Decimal", "Date", "Datetime", "DateOrDatetime"]:
+                self.type = str(ty)
             else:
-                _error(f"Property type not recognised, was {self.type}")
+                _error(f"Property type not recognised, was {model.type} for property {model.name}")
         self.cls = model.cls
         self.required = model.required or False
         self.reconciliationAPI = model.reconciliationAPI
@@ -210,25 +223,17 @@ def _as_arg(value: Any) -> str:
 
 
 class ResourceSpec:
-    def __init__(self, model: LiteralResourceModel | ResourceModel) -> None:
-        if isinstance(model, ResourceModel):
-            props = model.properties
-            self._model = model
-            self.name = model.name
-            self.graph = model.graph
-            self.preserved_graph = model.preserved_graph
-            self.properties = _listify(props)
-            self.requires = model.requires
-            self.unless = model.unless
-            self.guard = model.guard
-        elif isinstance(model, LiteralResourceModel):
-            self._model = model
-            self.name = model.name
-            self.pattern = model.pattern
-            self.properties = []
-            self.requires = model.requires
-            self.unless = model.unless
-            self.guard = model.guard
+    def __init__(self, model: ResourceModel) -> None:
+        props = model.properties
+        self._model = model
+        self.name = model.name
+        self.graph = model.graph or model.graphAdd
+        self.preserved_graph = model.graphAdd is not None
+        self.properties = [] if model.pattern is not None else _listify(props)
+        self.pattern = model.pattern
+        self.requires = model.requires
+        self.unless = model.unless
+        self.guard = model.guard
 
     def find_prop_defn(self, name: str) -> str | None:
         return next((p[1] for p in self.properties if p[0] == name), None)
