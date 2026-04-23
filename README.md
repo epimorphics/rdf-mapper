@@ -12,17 +12,17 @@
 
 ## usage
 
-```
+```sh
     mapper [--auto-declare] [--format=turtle] template input [output]
 ```
 
-Formats supported are `turtle` (default), `trig`, `nquads`, `update` and `delete`. 
+Formats supported are `turtle` (default), `trig`, `nquads`, `update` and `delete`.
 
 For the default format then the default graph is written out as `turtle`, if any of the templates target named graphs their output will be lost.
 
 With `update` format then a Sparql Update script is generated which can be used to update an existing dataset. All resources with a `@graph` will be written to the corresponding graph, replacing any existing content (the script will `DROP SILENT` all such graphs before inserting new data). Existing graph data can be preserved by using the `@graphAdd` directive instead.
 
-With `delete` format the data is transformed as normal but the output will be a Sparql Update script which will delete any `@graph`s and will delete the triples from any `@graphAdd` graphs. This allows a previous update to be removed instead of replaced. 
+With `delete` format the data is transformed as normal but the output will be a Sparql Update script which will delete any `@graph`s and will delete the triples from any `@graphAdd` graphs. This allows a previous update to be removed instead of replaced.
 
 > [!NOTE]
 > Care must be taken when using `delete` format with templates that include `@graphAdd`. Any bNodes generated in such preserved graphs will not be removed. Furthermore, any matching triples that had already been in the graph prior to the previous `update` will be removed and thus lost.
@@ -45,20 +45,26 @@ See [changelog](./CHANGELOG.md)
 
 Create virtual env and install dependencies:
 
+```sh
     python3 -m venv .venv
     . .venv/bin/activate
     pip install .
 
     pip install .[dev]
     pip install -e .
+```
 
 Linting:
 
+```sh
     ruff check [--fix]
+```
 
 VScode ruff plugin for interactive linting and type checking.
 
 Check for package updates:
 
+```sh
     pip install pip-tools
     pip-compile --upgrade pyproject.toml
+```

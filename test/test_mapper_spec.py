@@ -1,7 +1,7 @@
-from pathlib import Path
 import unittest
 
 from rdf_mapper.lib.mapper_spec import MapperSpec, ResourceModel, ResourceSpec
+
 
 class TestMapperModel(unittest.TestCase):
 

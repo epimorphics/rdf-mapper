@@ -459,7 +459,7 @@ class TestTemplateProcessor(unittest.TestCase):
             [{"id": "123", "label": "value1, value2"}],
             "split_in_url_pattern.ttl"
         )
-    
+
     def test_smap_to(self) -> None:
         self.do_test(
             MapperSpec({
@@ -478,7 +478,7 @@ class TestTemplateProcessor(unittest.TestCase):
                 }]
             }, auto_declare=False),
             [self.row1], "smap_to.ttl")
-    
+
     def test_guard_condition(self) -> None:
         self.do_test(
             MapperSpec({
@@ -493,7 +493,7 @@ class TestTemplateProcessor(unittest.TestCase):
             }, auto_declare=False),
             [self.row1, self.row2], "guard_condition.ttl"
         )
-    
+
     def test_guard_condition_false(self) -> None:
         self.do_test(
             MapperSpec({
@@ -564,7 +564,7 @@ class TestTemplateProcessor(unittest.TestCase):
 
         proc.finalize("update")
         self.assertEqual(proc.error_count, 0)
-    
+
     def test_no_abort_when_function_returns_none(self) -> None:
         spec = MapperSpec({
             "globals":{
@@ -586,9 +586,11 @@ class TestTemplateProcessor(unittest.TestCase):
 
         proc.finalize("update")
         self.assertEqual(proc.error_count, 0)
-        print(proc.dataset.serialize(format="trig"))
-        self.assertEqual(len(list(proc.dataset.triples((URIRef("http://example.com/444"), URIRef("https://epimorphics.com/datasets/test/def/p"), None)))), 0)
-        self.assertEqual(len(list(proc.dataset.triples((URIRef("http://example.com/555"), URIRef("https://epimorphics.com/datasets/test/def/p"), None)))), 1)
+        p = URIRef("https://epimorphics.com/datasets/test/def/p")
+        row_4_props = list(proc.dataset.triples((URIRef("http://example.com/444"), p, None)))
+        row_5_props = list(proc.dataset.triples((URIRef("http://example.com/555"), p, None)))
+        self.assertEqual(len(row_4_props), 0)
+        self.assertEqual(len(row_5_props), 1)
 
 
 def load_expected(name: str) -> str:

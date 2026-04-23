@@ -3,16 +3,16 @@
 
 from __future__ import annotations
 
-from enum import Enum, StrEnum
 import importlib.util
 import os
 import sys
 from collections import ChainMap
-from typing import Any, NoReturn, TextIO, cast
+from enum import StrEnum
+from typing import Any, NoReturn, TextIO
 
 import yaml
-
 from pydantic import BaseModel, Field, model_validator
+
 
 class ResourceModel(BaseModel):
     name: str
@@ -33,7 +33,7 @@ class ResourceModel(BaseModel):
         if not self.pattern and not self.properties:
             raise ValueError("Resource spec must have either pattern or properties")
         return self
-    
+
     @model_validator(mode="after")
     def check_graph_and_graphAdd(self) -> ResourceModel:
         if self.graph and self.graphAdd:

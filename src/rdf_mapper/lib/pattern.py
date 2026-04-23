@@ -4,9 +4,9 @@ from typing import Any, Callable, Iterable, Iterator, Protocol
 from rdflib import Literal
 from rdflib.term import Identifier
 
+from rdf_mapper.lib import function
 from rdf_mapper.lib.errors import MissingValueWarning
 from rdf_mapper.lib.template_state import TemplateState
-from rdf_mapper.lib import function
 
 
 class PipelineFunction(Protocol):
@@ -14,7 +14,7 @@ class PipelineFunction(Protocol):
         ...
 
 class Pattern:
-    
+
     _LANGSTRING_PATTERN = re.compile(r"^(.+)@([\w\-]+)$", re.DOTALL)
     _DT_PATTERN = re.compile(r"^(.+)\^\^<([^>]+)>$", re.DOTALL)
     _VARPATTERN = re.compile(r"{([^}]*)}")
@@ -24,16 +24,17 @@ class Pattern:
         self._patternString = pattern
         self._call_chain: list[Callable[[Identifier|None, TemplateState], Iterator[Identifier]]] = []
         self._parsePattern()
-    
+
     def execute(self, state: TemplateState) -> Iterator[Identifier]:
         values = list(self._call_chain[0](None, state))
         for func in self._call_chain[1:]:
             values = list(self._concat(v, result) for v in values for result in func(v, state))
-        yield from map(lambda v: self._wrap_literal(v), filter(lambda v: v is not None, values))
+        yield from map(self._wrap_literal, filter(lambda v: v is not None, values))
 
     def _wrap_literal(self, node: Identifier) -> Identifier:
         if isinstance(node, Literal) and isinstance(node.value, str):
-            # Attempt to parse language tagged string or datatype from the literal value if it is in the form "value@lang" or "value^^datatype"
+            # Attempt to parse language tagged string or datatype from the literal value
+            # if it is in the form "value@lang" or "value^^datatype"
             langstring_match = self._LANGSTRING_PATTERN.match(node.value)
             if langstring_match:
                 return Literal(langstring_match.group(1), lang=langstring_match.group(2))
@@ -50,11 +51,11 @@ class Pattern:
         else:
             return Literal(str(node1) + str(node2))
 
-    def _parsePattern(self):
+    def _parsePattern(self) -> None:
         to_parse = self._patternString
         self._parse_variables_and_statics(to_parse)
-    
-    def _parse_variables_and_statics(self, to_parse: str):
+
+    def _parse_variables_and_statics(self, to_parse: str) -> None:
         last_index = 0
         for var_match in self._VARPATTERN.finditer(to_parse):
             if var_match.start() > last_index:
@@ -63,13 +64,13 @@ class Pattern:
             last_index = var_match.end()
         if last_index < len(to_parse):
             self._call_chain.append(static_value(to_parse[last_index:]))
-    
+
     def _parse_variable_expansion(self, var_string: str) -> None:
         var_parts = self._PIPEPATTERN.split(var_string)
         var_name = var_parts[0].strip()
         var_expansion = VariableExpansion(var_name, var_parts[1:])
         self._call_chain.append(var_expansion.execute)
-    
+
 class VariableExpansion:
     def __init__(self, var_name: str, functions: list[str]):
         self.var_name = var_name

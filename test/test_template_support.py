@@ -3,21 +3,10 @@ import unittest
 
 from rdflib import XSD, Dataset, Literal, URIRef
 
+from rdf_mapper.lib.function import asBoolean, asDate, asDateOrDatetime, asDateTime, asDecimal, asInt
 from rdf_mapper.lib.mapper_spec import MapperSpec, ResourceModel, ResourceSpec
 from rdf_mapper.lib.template_state import TemplateState
-from rdf_mapper.lib.template_support import (
-    pattern_expand,
-    uri_expand,
-    value_expand
-)
-from rdf_mapper.lib.function import (
-    asBoolean,
-    asDate,
-    asDateOrDatetime,
-    asDateTime,
-    asDecimal,
-    asInt
-)
+from rdf_mapper.lib.template_support import pattern_expand, uri_expand, value_expand
 
 
 class TestTemplateSupport(unittest.TestCase):
@@ -115,7 +104,7 @@ class TestTemplateSupport(unittest.TestCase):
             value_expand("{list | splitComma}", spec.namespaces, state),
             [Literal("foo"), Literal("bar")])
 
-    def test_ints(self):
+    def test_ints(self) -> None:
         self.assertEqual(asInt("1"), Literal("1", datatype=XSD.integer))
         self.assertEqual(asInt(1), Literal("1", datatype=XSD.integer))
         self.assertEqual(asInt(1.0), Literal("1", datatype=XSD.integer))
@@ -143,7 +132,7 @@ class TestTemplateSupport(unittest.TestCase):
         self.assertEqual(asDateOrDatetime("18 May 2023 12:34"), Literal("2023-05-18T12:34:00", datatype=XSD.dateTime))
         self.assertEqual(asDateOrDatetime("18 May 2023"), Literal("2023-05-18", datatype=XSD.date))
         self.assertEqual(asDateOrDatetime("2023"), Literal("2023-01-01", datatype=XSD.date))
-        self.assertIsNone(asDateOrDatetime(None))
+        self.assertIsNone(asDateOrDatetime(None)) # type: ignore
         self.assertIsNone(asDateOrDatetime(""))
 
     def test_boolean(self) -> None:
@@ -187,8 +176,8 @@ class TestTemplateSupport(unittest.TestCase):
         state = TemplateState(spec.context.new_child({"$row": 1, "$file": "file"}), Dataset(), spec)
         v = value_expand("{|now}", spec.namespaces, state)
         self.assertTrue(isinstance(v, list))
-        self.assertTrue(all(isinstance(item, Literal) for item in v))
-        self.assertEqual(v[0].datatype, XSD.dateTime)
+        self.assertTrue(all(isinstance(item, Literal) for item in v)) # type: ignore
+        self.assertEqual(v[0].datatype, XSD.dateTime) # type: ignore
 
     def test_map_by(self) -> None:
         spec = MapperSpec({"globals": {"$datasetID": "testds"}})
@@ -207,7 +196,7 @@ class TestTemplateSupport(unittest.TestCase):
         state = TemplateState(spec.context.new_child({"val": "Foo"}), Dataset(), spec)
         self.assertEqual(value_expand("{ val | toUpper}", spec.namespaces, state), [Literal("FOO")])
         self.assertEqual(value_expand("{ val | toLower}", spec.namespaces, state), [Literal("foo")])
-    
+
     def test_smap_to(self) -> None:
         spec = MapperSpec({"globals": {"$datasetID": "testds"}})
         spec.embedded_resources = {
@@ -218,7 +207,7 @@ class TestTemplateSupport(unittest.TestCase):
                     "@value": None,
                     "@type": None,
                 },
-                pattern = "{@value}^^<{@type}>" 
+                pattern = "{@value}^^<{@type}>"
             )),
             "ltLit": ResourceSpec(
                 ResourceModel(
