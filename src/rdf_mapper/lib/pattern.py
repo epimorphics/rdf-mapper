@@ -7,7 +7,16 @@ from rdflib.term import Identifier
 from rdf_mapper.lib import function
 from rdf_mapper.lib.errors import MissingValueWarning
 from rdf_mapper.lib.template_state import TemplateState
-from rdf_mapper.lib.template_support import _expand_curi
+
+_CURI_PATTERN = re.compile(r"([_A-Za-z][\w\-\.]*):([\w\-\.]+)")
+
+def _expand_curi(uriref: str, namespaces: Mapping[str,str]) -> str:
+    match = _CURI_PATTERN.fullmatch(uriref)
+    if match:
+        ns = namespaces.get(match.group(1))
+        if ns:
+            return ns + match.group(2)
+    return uriref
 
 
 class PipelineFunction(Protocol):
@@ -35,7 +44,7 @@ class Pattern:
         values = list(self._call_chain[0](None, state))
         for func in self._call_chain[1:]:
             values = list(self._concat(v, result) for v in values for result in func(v, state))
-        yield from filter(lambda v: v is not None, map(lambda v: self._wrap_literal(v, state.namespaces), values)) #type: ignore
+        yield from filter(lambda v: v is not None, map(lambda v: self._wrap_literal(v, state.spec.namespaces), values)) #type: ignore
 
     def _wrap_literal(self, node: Identifier|None, namespaces: Mapping[str, str]) -> Identifier|None:
         if node is None:

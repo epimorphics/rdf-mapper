@@ -2,7 +2,7 @@ from collections import ChainMap
 import unittest
 
 from rdflib import Dataset, Literal
-from rdf_mapper.lib.mapper_spec import MapperSpec
+from rdf_mapper.lib.mapper_spec import MapperModel, MapperSpec
 from rdf_mapper.lib.pattern import Pattern
 from rdf_mapper.lib.template_state import TemplateState
 
@@ -69,5 +69,5 @@ class TestPattern (unittest.TestCase):
     def test_wrap_literal_with_curie_datatype(self) -> None:
         pattern = Pattern("{value}^^<xsd:string>")
         state = TemplateState(
-            ChainMap({"value": "test"}), Dataset(), MapperSpec())
+            ChainMap({"value": "test"}), Dataset(), MapperSpec(MapperModel(namespaces={"xsd": "http://www.w3.org/2001/XMLSchema#"})))
         self.assertEqual(list(pattern.execute(state)), [Literal("test", datatype="http://www.w3.org/2001/XMLSchema#string")])

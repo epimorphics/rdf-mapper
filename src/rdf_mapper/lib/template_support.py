@@ -25,7 +25,7 @@ from rdflib.term import Identifier
 from rdf_mapper.lib.errors import MissingValueWarning
 from rdf_mapper.lib.function import register
 from rdf_mapper.lib.mapper_spec import PropSpec, ResourceModel, ResourceSpec
-from rdf_mapper.lib.pattern import Pattern
+from rdf_mapper.lib.pattern import Pattern, _expand_curi
 from rdf_mapper.lib.reconcile import MatchResult, ReconcileRequest, requestReconcile
 from rdf_mapper.lib.template_state import ReconciliationRecord, TemplateState
 
@@ -96,7 +96,6 @@ def normalize(s: str) -> str:
         norm = norm[1:]
     return norm
 
-_CURI_PATTERN = re.compile(r"([_A-Za-z][\w\-\.]*):([\w\-\.]+)")
 _URI_PATTERN = re.compile(r"(https?|file|urn)://.*")   # TODO Support other schemes
 _HASH_PATTERN = re.compile(r"hash\s?\(([^)]*)\)$")
 _COMMA_SPLIT = re.compile(r"\s*,\s*")
@@ -177,14 +176,6 @@ def _make_full_iri(uriref:str, state: TemplateState) -> str:
         return uriref
     else:
         return urljoin(f"{state.get('$datasetBase')}/data/{state.get('$resourceID')}/", uriref) # type: ignore - know that $datasetBase and $resourceID are set
-
-def _expand_curi(uriref: str, namespaces: Mapping[str,str]) -> str:
-    match = _CURI_PATTERN.fullmatch(uriref)
-    if match:
-        ns = namespaces.get(match.group(1))
-        if ns:
-            return ns + match.group(2)
-    return uriref
 
 _DT_PATTERN = re.compile(r"^(.+)\^\^(<[^>]+>)$", re.DOTALL)
 
