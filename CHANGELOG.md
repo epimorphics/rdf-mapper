@@ -10,7 +10,7 @@ This project is currently in pre-release and a new minor version increment MAY N
 
 ### Fixed
 
-- Fixed issue where a property mapping like "{foo}@en" would generate a plain literal "@en" when there is no value for `foo`. (#63)
+- Fixed issue where a property mapping like "{foo}@en" would generate a plain literal "@en" when there is no value for `foo`. (#62)
 - Fixed issue where a compact uri in a property mapping (e.g. "{foo}<xsd:string>") would not be expanded to the appropriate datatype URI. (#61)
 
 ## [0.3.0]
