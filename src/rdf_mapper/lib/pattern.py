@@ -1,5 +1,5 @@
 import re
-from typing import Any, Callable, Iterable, Iterator, Protocol
+from typing import Any, Callable, Iterable, Iterator, Mapping, Protocol
 
 from rdflib import Literal
 from rdflib.term import Identifier
@@ -7,6 +7,7 @@ from rdflib.term import Identifier
 from rdf_mapper.lib import function
 from rdf_mapper.lib.errors import MissingValueWarning
 from rdf_mapper.lib.template_state import TemplateState
+from rdf_mapper.lib.template_support import _expand_curi
 
 
 class PipelineFunction(Protocol):
@@ -22,6 +23,11 @@ class Pattern:
 
     def __init__(self, pattern: str):
         self._patternString = pattern
+        self._patternType = None
+        if self._LANGSTRING_PATTERN.match(pattern):
+            self._patternType = "langstring"
+        elif self._DT_PATTERN.match(pattern):
+            self._patternType = "datatype"
         self._call_chain: list[Callable[[Identifier|None, TemplateState], Iterator[Identifier]]] = []
         self._parsePattern()
 
@@ -29,9 +35,11 @@ class Pattern:
         values = list(self._call_chain[0](None, state))
         for func in self._call_chain[1:]:
             values = list(self._concat(v, result) for v in values for result in func(v, state))
-        yield from map(self._wrap_literal, filter(lambda v: v is not None, values))
+        yield from filter(lambda v: v is not None, map(lambda v: self._wrap_literal(v, state.namespaces), values)) #type: ignore
 
-    def _wrap_literal(self, node: Identifier) -> Identifier:
+    def _wrap_literal(self, node: Identifier|None, namespaces: Mapping[str, str]) -> Identifier|None:
+        if node is None:
+            return None
         if isinstance(node, Literal) and isinstance(node.value, str):
             # Attempt to parse language tagged string or datatype from the literal value
             # if it is in the form "value@lang" or "value^^datatype"
@@ -40,7 +48,11 @@ class Pattern:
                 return Literal(langstring_match.group(1), lang=langstring_match.group(2))
             dt_match = self._DT_PATTERN.match(node.value)
             if dt_match:
-                return Literal(dt_match.group(1), datatype=dt_match.group(2))
+                return Literal(dt_match.group(1), datatype= _expand_curi(dt_match.group(2), namespaces))
+            if self._patternType == "langstring" or self._patternType == "datatype":
+                # If the pattern is a langstring or datatype pattern, but the output value does not match the expected format.
+                # we should not yield it as a literal
+                return None
         return node
 
     def _concat(self, node1: Identifier|None, node2: Identifier) -> Identifier:

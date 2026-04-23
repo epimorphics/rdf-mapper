@@ -6,6 +6,13 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 This project is currently in pre-release and a new minor version increment MAY NOT be backwards compatible with the previous minor version. Breaking changes are marked as BREAKING in the descriptions below.
 
+## [0.3.1]
+
+### Fixed
+
+- Fixed issue where a property mapping like "{foo}@en" would generate a plain literal "@en" when there is no value for `foo`. (#63)
+- Fixed issue where a compact uri in a property mapping (e.g. "{foo}<xsd:string>") would not be expanded to the appropriate datatype URI. (#61)
+
 ## [0.3.0]
 
 ### Changed
