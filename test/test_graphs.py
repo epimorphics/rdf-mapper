@@ -40,7 +40,8 @@ class TestGraphs:
 
     def run_test(self) -> TemplateProcessor:
         output = StringIO("")
-        proc = TemplateProcessor(MapperSpec(self.mapper_spec, auto_declare=False), "test", output)
+        mapper = MapperSpec(self.mapper_spec, auto_declare=False)
+        proc = TemplateProcessor(mapper, "test", output)
         for row in self.rows:
             proc.process_row(row)
         return proc
@@ -56,7 +57,9 @@ class TestGraphs:
 
     def test_basic_graphs(self) -> None:
         actual = list(self.run_test().dataset.quads())
-        assert sorted(self.load_expected_quads("graphs.trig")) == sorted(actual)
+        sa = sorted(actual)
+        se = sorted(self.load_expected_quads("graphs.trig"))
+        assert se == sa
 
     def _init_test_dataset(self) -> Dataset:
         ds = Dataset()

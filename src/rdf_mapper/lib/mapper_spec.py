@@ -3,6 +3,7 @@
 
 from __future__ import annotations
 
+from enum import Enum, StrEnum
 import importlib.util
 import os
 import sys
@@ -10,6 +11,62 @@ from collections import ChainMap
 from typing import Any, NoReturn, TextIO, cast
 
 import yaml
+
+from pydantic import BaseModel, Field, model_validator
+
+class ResourceModel(BaseModel):
+    name: str
+    comment: str | None = None
+    requires: dict[str, Any] | None = None
+    unless: dict[str, Any] | None = None
+    guard: str | None = None
+    graph: str | None = Field(default=None, alias="@graph")
+    preserved_graph: bool = True
+    graphAdd: str | None = Field(default=None, alias="@graphAdd")
+    properties: list[dict[str, Any]] | dict[str, Any] = []
+    pattern: str | None = None
+
+    @model_validator(mode="after")
+    def check_pattern_or_properties(self) -> ResourceModel:
+        if self.pattern and self.properties:
+            raise ValueError("Resource spec cannot have both pattern and properties")
+        if not self.pattern and not self.properties:
+            raise ValueError("Resource spec must have either pattern or properties")
+        return self
+    
+    @model_validator(mode="after")
+    def check_graph_and_graphAdd(self) -> ResourceModel:
+        if self.graph and self.graphAdd:
+            raise ValueError("Resource spec cannot have both @graph and @graphAdd")
+        return self
+
+class PropTypeEnum(StrEnum):
+    Int = "Int"
+    Decimal = "Decimal"
+    Date = "Date"
+    Datetime = "Datetime"
+    DateOrDatetime = "DateOrDatetime"
+
+class PropModel(BaseModel):
+    name: str
+    comment: str | None = None
+    prop: str
+    type: PropTypeEnum | None = None
+    cls: str = Field(alias="class")
+    required: bool = False
+    reconciliationAPI: str | None = None
+    reconciliationType: str | None = None
+    reconciliationFilters: dict[str, str] = Field(default_factory=dict)
+
+class MapperModel(BaseModel):
+    globals: dict[str, Any] = {}
+    namespaces: dict[str, str] = {}
+    one_offs: list[ResourceModel] = []
+    resources: list[ResourceModel] = []
+    mappings: dict[str, dict[str, str]] = {}
+    embedded: list[ResourceModel] = []
+    properties: list[PropModel] = []
+    imports: list[str] = []
 
 
 class MapperSpec:
@@ -29,22 +86,26 @@ class MapperSpec:
         "org": "http://www.w3.org/ns/org#",
     }
 
-    def __init__(self, spec: dict = {}, auto_declare: bool = True) -> None:
-        self.spec = spec
+    def __init__(self, spec: MapperModel | dict = MapperModel(), auto_declare: bool = True) -> None:
+        if isinstance(spec, dict):
+            model = MapperModel(**spec)
+        else:
+            model = spec
+        self._model = model
         self.auto_declare = auto_declare
-        self.globals = self._getAsDict("globals")
+        self.globals = model.globals
         self.context: ChainMap[str, Any] = ChainMap(self.globals, self.builtins)
-        self.namespaces = ChainMap(self._getAsDict("namespaces"), self.builtinNamespaces)
-        self.one_offs = [ResourceSpec(spec) for spec in self._getAsList("one_offs")]
+        self.namespaces: ChainMap[str, str] = ChainMap(model.namespaces, self.builtinNamespaces)
+        self.one_offs : list[ResourceSpec] = [ResourceSpec(m) for m in model.one_offs]
         self._init_defaults()
-        self.resources = [ResourceSpec(spec) for spec in self._getAsList("resources")]
-        self.mappings = self._getAsDictOfDicts("mappings")
-        self.embedded_resources = {}
-        for e in self._getAsList("embedded"):
+        self.resources: list[ResourceSpec] = [ResourceSpec(m) for m in model.resources]
+        self.mappings = model.mappings
+        self.embedded_resources : dict[str, ResourceSpec] = {}
+        for e in model.embedded:
             rs = ResourceSpec(e)
             self.embedded_resources[rs.name] = rs
-        self.propertySpecs = {}
-        for p in self._getAsList("properties"):
+        self.propertySpecs : dict[str, PropSpec] = {}
+        for p in model.properties:
             ps = PropSpec(p)
             self.propertySpecs[ps.name] = ps
         self._load_imports()
@@ -56,10 +117,10 @@ class MapperSpec:
     def _load_imports(self) -> None:
         """Load yaml or python imports into the spec in order given."""
         self.imports = {}
-        imports = self.spec.get("imports")
+        imports = self._model.imports
         if not imports:
             return
-        acc_module = MapperSpec({})
+        acc_module = MapperSpec(MapperModel())
         for module_name in imports:
             fpath = _find_file(module_name)
             if not fpath:
@@ -88,51 +149,20 @@ class MapperSpec:
         self.one_offs = merged.one_offs
         self.mappings = merged.mappings
 
-    def _getAsDict(self, field: str) -> dict:
-        v = self.spec.get(field)
-        if v is None:
-            return {}
-        elif type(v) is dict:
-            return v
-        else:
-            _error(f"Expected {field} to be a map/dict was {v}")
-
-    def _getAsDictOfDicts(self, field: str) -> dict[str, dict[str, str]]:
-        v = self.spec.get(field)
-        if v is None:
-            return {}
-        elif type(v) is dict:
-            for key, value in v.items():
-                if type(value) is not dict:
-                    _error(f"Expected {field} to be a map of maps/dicts was {v}")
-            return v
-        else:
-            _error(f"Expected {field} to be a map/dict was {v}")
-
-    def _getAsList(self, field: str) -> list:
-        v = self.spec.get(field)
-        if v is None:
-            return []
-        elif type(v) is list:
-            return v
-        else:
-            _error(f"Expected {field} to be a list was {v}")
-
     def merge(self, other: MapperSpec) -> MapperSpec:
         """Return a new mapper spec with other values merged into these values. We take precedence."""
         merged_ps = list((other.propertySpecs | self.propertySpecs).values())
         merged_es = list((other.embedded_resources | self.embedded_resources).values())
         merged_oo = self.one_offs + other.one_offs
         merged_mppings = other.mappings | self.mappings
-        return MapperSpec(
-            {
-                "globals": other.globals | self.globals,
-                "namespaces": dict(other.namespaces) | dict(self.namespaces),
-                "properties": [ps.spec for ps in merged_ps],
-                "embedded": [es.spec for es in merged_es],
-                "one_offs": [oo.spec for oo in merged_oo],
-                "mappings": merged_mppings,
-            }
+        return MapperSpec(MapperModel(
+                globals =  other.globals | self.globals,
+                namespaces = dict(other.namespaces) | dict(self.namespaces),
+                properties = [ps._model for ps in merged_ps],
+                embedded = [es._model for es in merged_es],
+                one_offs = [oo._model for oo in merged_oo],
+                mappings = merged_mppings,
+            )
         )
 
 
@@ -151,30 +181,28 @@ def _find_file(fname: str) -> str | None:
 
 def load_template(file: TextIO) -> MapperSpec:
     with file:
-        return MapperSpec(yaml.safe_load(file))
+        return MapperSpec(MapperModel.model_validate(yaml.safe_load(file)))
 
 
 class PropSpec:
-    def __init__(self, spec: dict) -> None:
-        if isinstance(spec, dict) and "name" in spec and "prop" in spec:
-            self.spec = spec
-            self.name = spec.get("name")
-            self.prop = cast(str, spec.get("prop"))
-            self.type = None
-            ty = spec.get("type")
-            if ty:
-                if ty in ["Int", "Decimal", "Date", "Datetime", "DateOrDatetime"]:
-                    self.type = ty
-                else:
-                    _error(f"Property type not recognised, was {self.type}")
-            self.cls = spec.get("class")
-            self.required = spec.get("required") or False
-            self.reconciliationAPI = spec.get("reconciliationAPI")
-            self.reconciliationType = spec.get("reconciliationType")
-            filters = spec.get("reconciliationFilters") or {}
-            self.reconciliationFilters = list(filters.items())
-        else:
-            _error(f"Property spec must be a map with at least name and prop, was {spec}")
+    def __init__(self, model: PropModel) -> None:
+        self._model = model
+        self.name = model.name
+        self.comment = model.comment
+        self.prop = model.prop
+        self.type = None
+        ty = model.type
+        if ty:
+            if str(ty) in ["Int", "Decimal", "Date", "Datetime", "DateOrDatetime"]:
+                self.type = str(ty)
+            else:
+                _error(f"Property type not recognised, was {model.type} for property {model.name}")
+        self.cls = model.cls
+        self.required = model.required or False
+        self.reconciliationAPI = model.reconciliationAPI
+        self.reconciliationType = model.reconciliationType
+        filters = model.reconciliationFilters or {}
+        self.reconciliationFilters = list(filters.items())
 
     def propValueTemplate(self, pattern: str) -> tuple[str, str]:
         if self.type and pattern.startswith("{") and pattern.endswith("}"):
@@ -195,31 +223,17 @@ def _as_arg(value: Any) -> str:
 
 
 class ResourceSpec:
-    def __init__(self, spec: dict) -> None:
-        if isinstance(spec, dict) and "name" in spec and "properties" in spec:
-            props = spec.get("properties")
-            self.spec = spec
-            self.name = spec.get("name")
-            self.graph = spec.get("@graph") or spec.get("@graphAdd")
-            self.preserved_graph = "@graphAdd" in spec
-            self.properties = _listify(props)
-            self.requires = spec.get("requires")
-            self.unless = spec.get("unless")
-            self.guard = spec.get("guard")
-            if self.requires is not None and not isinstance(self.requires, dict):
-                _error(f"Resource spec requires must be a dictionary, was {self.requires}")
-        elif isinstance(spec, dict) and "name" in spec and "pattern" in spec:
-            self.spec = spec
-            self.name = spec.get("name")
-            self.pattern = spec.get("pattern")
-            self.properties = []
-            self.requires = spec.get("requires")
-            self.unless = spec.get("unless")
-            self.guard = spec.get("guard")
-            if self.requires is not None and not isinstance(self.requires, dict):
-                _error(f"Resource spec requires must be a dictionary, was {self.requires}")
-        else:
-            _error(f"Resource spec must be a map with at least name and some properties or a pattern, was {spec}")
+    def __init__(self, model: ResourceModel) -> None:
+        props = model.properties
+        self._model = model
+        self.name = model.name
+        self.graph = model.graph or model.graphAdd
+        self.preserved_graph = model.graphAdd is not None
+        self.properties = [] if model.pattern is not None else _listify(props)
+        self.pattern = model.pattern
+        self.requires = model.requires
+        self.unless = model.unless
+        self.guard = model.guard
 
     def find_prop_defn(self, name: str) -> str | None:
         return next((p[1] for p in self.properties if p[0] == name), None)

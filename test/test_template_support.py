@@ -3,7 +3,7 @@ import unittest
 
 from rdflib import XSD, Dataset, Literal, URIRef
 
-from rdf_mapper.lib.mapper_spec import MapperSpec, ResourceSpec
+from rdf_mapper.lib.mapper_spec import MapperSpec, ResourceModel, ResourceSpec
 from rdf_mapper.lib.template_state import TemplateState
 from rdf_mapper.lib.template_support import (
     pattern_expand,
@@ -211,22 +211,24 @@ class TestTemplateSupport(unittest.TestCase):
     def test_smap_to(self) -> None:
         spec = MapperSpec({"globals": {"$datasetID": "testds"}})
         spec.embedded_resources = {
-            "dtLit": ResourceSpec({
-                "name": "dtLit",
-                "requires": {
+            "dtLit": ResourceSpec(
+                ResourceModel(
+                name= "dtLit",
+                requires = {
                     "@value": None,
                     "@type": None,
                 },
-                "pattern": "{@value}^^<{@type}>" 
-            }),
-            "ltLit": ResourceSpec({
-                "name": "ltLit",
-                "requires": {
-                    "@value": None,
-                    "@language": None,
-                },
-                "pattern": "{@value}@{@language}"
-            }),
+                pattern = "{@value}^^<{@type}>" 
+            )),
+            "ltLit": ResourceSpec(
+                ResourceModel(
+                    name = "ltLit",
+                    requires = {
+                        "@value": None,
+                        "@language": None,
+                    },
+                    pattern = "{@value}@{@language}"
+            )),
         }
         context = spec.context.new_child({"@type": "http://example.org/Foo","data": {"@value": "value", "@language": "en"}})
         state = TemplateState(context, Dataset(), spec)
