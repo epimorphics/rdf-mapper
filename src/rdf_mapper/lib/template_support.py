@@ -9,27 +9,25 @@
 """
 
 import base64
-import datetime
 import hashlib
 import logging
 import re
 import traceback
 import uuid
-from collections.abc import Callable, Mapping
+from collections.abc import Mapping
 from itertools import chain
-from typing import Any, ChainMap, List, Union
+from typing import Any, List, Union
 from urllib.parse import urljoin
 
-import dateparser
-from rdflib import RDF, SKOS, XSD, BNode, IdentifiedNode, Literal, Node, URIRef, term
+from rdflib import RDF, SKOS, BNode, IdentifiedNode, Literal, URIRef, term
 from rdflib.term import Identifier
 
+from rdf_mapper.lib.errors import MissingValueWarning
+from rdf_mapper.lib.function import register
 from rdf_mapper.lib.mapper_spec import PropSpec, ResourceModel, ResourceSpec
+from rdf_mapper.lib.pattern import Pattern
 from rdf_mapper.lib.reconcile import MatchResult, ReconcileRequest, requestReconcile
 from rdf_mapper.lib.template_state import ReconciliationRecord, TemplateState
-from rdf_mapper.lib.pattern import Pattern
-from rdf_mapper.lib.function import register
-from rdf_mapper.lib.errors import MissingValueWarning
 
 _VARPATTERN = re.compile(r"{([^}]*)}")
 
@@ -106,7 +104,12 @@ _COMMA_SPLIT = re.compile(r"\s*,\s*")
 def pattern_expand(template: str, state: TemplateState) -> List[str]:
     """Expand a pattern to a string, applying any variable substitutions and function chains."""
     pattern = Pattern(template)
-    return list(map(lambda lit: lit.value if isinstance(lit, Literal) else str(lit), filter(lambda v: v is not None, pattern.execute(state))))
+    return list(
+        map(
+            lambda lit: lit.value if isinstance(lit, Literal) else str(lit),
+            filter(lambda v: v is not None, pattern.execute(state))
+        )
+    )
 
 def uri_expand(pattern: str, namespaces: Mapping[str,str], state: TemplateState) -> List[str]:
     """Expand a URI pattern.
@@ -161,13 +164,19 @@ def uri_expand(pattern: str, namespaces: Mapping[str,str], state: TemplateState)
         if len(urirefs) == 0:
             urirefs.append(f"{state.get('$datasetBase')}/data/{state.get('$resourceID')}")
 
-        return list(map(lambda uriref: urljoin(f"{state.get('$datasetBase')}/data/{state.get('$resourceID')}/", uriref) if not _URI_PATTERN.fullmatch(uriref) else uriref, urirefs)) # type: ignore - know that $datasetBase and $resourceID are set
+        return list(map(lambda uriref: _make_full_iri(uriref, state), urirefs))
     else:
         # Simple string, create as def in dataset namespace
         _id = f"{state.get('$datasetBase')}/def/{normalize(pattern)}"
         if state.spec.auto_declare:
             _record_implicit_prop(pattern, _id, None, state)
         return [_id]
+
+def _make_full_iri(uriref:str, state: TemplateState) -> str:
+    if _URI_PATTERN.fullmatch(uriref):
+        return uriref
+    else:
+        return urljoin(f"{state.get('$datasetBase')}/data/{state.get('$resourceID')}/", uriref) # type: ignore - know that $datasetBase and $resourceID are set
 
 def _expand_curi(uriref: str, namespaces: Mapping[str,str]) -> str:
     match = _CURI_PATTERN.fullmatch(uriref)
@@ -196,7 +205,7 @@ def value_expand(pattern: str, namespaces: Mapping[str,str], state: TemplateStat
         if pattern.startswith("<::"):
             return state.backlinks.get(pattern[3:-1])
         else:
-            return list(map(lambda uriref: URIRef(uriref), uri_expand(pattern, namespaces, state)))
+            return list(map(URIRef, uri_expand(pattern, namespaces, state)))
     else:
         p = Pattern(pattern)
         return list(p.execute(state))
@@ -209,14 +218,16 @@ def process_resource_spec(name: str, rs: ResourceSpec, state: TemplateState) -> 
 
     if rs.guard:
         # If the resource spec has a guard condition, evaluate it and skip if it is either None or False
-        eval_test_result = eval('locals()', {}, state.context)
         try:
             eval_result = eval(rs.guard, {}, state.context)
             if eval_result is None or eval_result is False:
-                logging.warning(f"Skipping resource {rs.name} on row {state.get('$row')} because guard condition {rs.guard} evaluated to False.")
+                logging.warning(
+                    f"Skipping resource {rs.name} on row {state.get('$row')} "
+                    f"because guard condition {rs.guard} evaluated to False.")
                 return None
         except Exception as ex:
-            logging.error(f"Error evaluating guard condition {rs.guard} for resource {rs.name} on row {state.get('$row')}: {ex}")
+            logging.error(
+                f"Error evaluating guard condition {rs.guard} for resource {rs.name} on row {state.get('$row')}: {ex}")
             return None
 
     # If the resource spec has a requires dict, check the row for matching values

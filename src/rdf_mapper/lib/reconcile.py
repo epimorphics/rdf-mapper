@@ -6,7 +6,7 @@ import json
 from typing import Any, cast
 
 import requests
-from rdflib import XSD, BNode, Graph, IdentifiedNode, Literal, URIRef, term
+from rdflib import XSD, BNode, Graph, IdentifiedNode, Literal, URIRef
 
 
 class ReconcileRequest:

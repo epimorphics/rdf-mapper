@@ -77,12 +77,12 @@ class TestGraphs:
         ))
         return ds
 
-    def _generate_update(self, format: str) -> str:
+    def _generate_update(self, format_name: str) -> str:
         proc = self.run_test()
         with tempfile.TemporaryDirectory() as tmpdirname:
-            filename = f"{tmpdirname}/{format}.ru"
+            filename = f"{tmpdirname}/{format_name}.ru"
             proc.output = open(filename, "w")
-            proc.finalize(format)
+            proc.finalize(format_name)
             with open(filename, "r") as result_file:
                 return result_file.read()
 
