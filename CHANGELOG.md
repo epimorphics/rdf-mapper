@@ -6,6 +6,12 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 This project is currently in pre-release and a new minor version increment MAY NOT be backwards compatible with the previous minor version. Breaking changes are marked as BREAKING in the descriptions below.
 
+## Unreleased
+
+### Fixed
+
+- Fixed issue where a property mapping like "{foo}" would generate a single literal value like "['A', 'B' 'C']" if the value of `foo` was an array. The mapper now correctly returns a separate literal value for each item in the array.
+
 ## [0.3.1]
 
 ### Fixed
