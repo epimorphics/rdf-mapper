@@ -1,28 +1,30 @@
-from collections import ChainMap
 import unittest
+from collections import ChainMap
 
 from rdflib import Dataset, Literal
+
 from rdf_mapper.lib.mapper_spec import MapperModel, MapperSpec
 from rdf_mapper.lib.pattern import Pattern
 from rdf_mapper.lib.template_state import TemplateState
 
+
 class TestPattern (unittest.TestCase):
 
-    def test_langstring(self):
+    def test_langstring(self) -> None:
         pattern = Pattern("Hello@en")
         # self.assertEqual(pattern.type, "langstring")
         # self.assertEqual(pattern.lang, "en")
         # self.assertEqual(pattern.datatype, None)
         self.assertEqual(list(pattern.execute(TemplateState(ChainMap(), Dataset(), MapperSpec()))), [Literal("Hello", lang="en")])
 
-    def test_datatype(self):
+    def test_datatype(self) -> None:
         pattern = Pattern("42^^<http://www.w3.org/2001/XMLSchema#integer>")
         # self.assertEqual(pattern.type, "datatype")
         # self.assertEqual(pattern.lang, None)
         # self.assertEqual(pattern.datatype, "<http://www.w3.org/2001/XMLSchema#integer>")
         self.assertEqual(list(pattern.execute(TemplateState(ChainMap(), Dataset(), MapperSpec()))), [Literal("42", datatype="http://www.w3.org/2001/XMLSchema#integer")])
 
-    def test_variables_and_statics(self):
+    def test_variables_and_statics(self) -> None:
         pattern = Pattern("Hello {name}!")
         self.assertEqual(len(pattern._call_chain), 3)  # static "Hello ", variable "name", static "!"
         self.assertTrue(callable(pattern._call_chain[0]))  # static "Hello "
@@ -32,7 +34,19 @@ class TestPattern (unittest.TestCase):
             ChainMap({"name": "Alice"}), Dataset(), MapperSpec())
         self.assertEqual(list(pattern.execute(state)), [Literal("Hello Alice!")])
 
-    def test_datatype_as_variable(self):
+    def test_variable_with_list_value(self) -> None:
+        pattern = Pattern("{names}")
+        state = TemplateState(
+            ChainMap({"names": ["Alice", "Bob", "Charlie"]}), Dataset(), MapperSpec())
+        self.assertEqual(list(pattern.execute(state)), [Literal("Alice"), Literal("Bob"), Literal("Charlie")])
+
+    def test_variable_with_static_and_list_value(self) -> None:
+        pattern = Pattern("Name: {names}")
+        state = TemplateState(
+            ChainMap({"names": ["Alice", "Bob", "Charlie"]}), Dataset(), MapperSpec())
+        self.assertEqual(list(pattern.execute(state)), [Literal("Name: Alice"), Literal("Name: Bob"), Literal("Name: Charlie")])
+
+    def test_datatype_as_variable(self) -> None:
         pattern = Pattern("{@value}^^<{@type}>")
         # self.assertEqual(pattern.type, "datatype")
         state = TemplateState(
@@ -41,14 +55,14 @@ class TestPattern (unittest.TestCase):
         print(actual)
         self.assertEqual(actual, [Literal("42", datatype="http://www.w3.org/2001/XMLSchema#integer")])
 
-    def test_variable_function_chain(self):
+    def test_variable_function_chain(self) -> None:
         pattern = Pattern("{greeting} {name | toUpper}!")
         self.assertEqual(len(pattern._call_chain), 4)  # variable "greeting", static " ", variable "name", static "!"
         state = TemplateState(
             ChainMap({"greeting": "Hi", "name": "Bob"}), Dataset(), MapperSpec())
         self.assertEqual(list(pattern.execute(state)), [Literal("Hi BOB!")])
 
-    def test_function_chain_with_split(self):
+    def test_function_chain_with_split(self) -> None:
         pattern = Pattern("{names | splitComma | toUpper}")
         state = TemplateState(
             ChainMap({"names": "Alice,Bob,Charlie"}), Dataset(), MapperSpec())
