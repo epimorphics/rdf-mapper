@@ -117,8 +117,16 @@ class VariableExpansion:
                 else:
                     results.append(result)
             values = results
-        yield from map(lambda v: Literal(v) if not isinstance(v, Identifier) else v, filter(lambda v: v is not None, values))
+        yield from self._wrap_results(values)
 
+        # yield from map(lambda v: Literal(v) if not isinstance(v, Identifier) else v, filter(lambda v: v is not None, values))
+
+    def _wrap_results(self, values: list[Any]) -> Iterator[Identifier]:
+        for v in values:
+            if isinstance(v, Iterable) and not isinstance(v, str):
+                yield from self._wrap_results(list(v))
+            elif v is not None:
+                yield Literal(v) if not isinstance(v, Identifier) else v
 
 def static_value(value: str) -> Callable[[Identifier|None, TemplateState], Iterator[Literal]]:
     def _static_value(_: Identifier|None, __: TemplateState) -> Iterator[Literal]:
@@ -127,10 +135,10 @@ def static_value(value: str) -> Callable[[Identifier|None, TemplateState], Itera
 
 
 def _variable_value(var_name: str) -> Callable[[Identifier|None, TemplateState], Iterator[Any]]:
-    def _variable_value(_: Identifier|None, state: TemplateState) -> Iterator[Any]:
+    def _variable_value_(_: Identifier|None, state: TemplateState) -> Iterator[Any]:
         if var_name in state.context:
             yield state.context[var_name]
         else:
             raise MissingValueWarning(f"Variable '{var_name}' not found in context")
-    return _variable_value
+    return _variable_value_
 
