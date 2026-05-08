@@ -334,16 +334,17 @@ def process_property_value(resource: IdentifiedNode, prop: str, template: Any, s
 
     if isinstance(template, list):
         # Multiple expansions defined for this property
-        for template_item in template:
+        has_values = False
+        for template_ix, template_item in enumerate(template):
             try:
                 process_property_value(resource, prop, template_item, state)
-            except MissingValueWarning as warn:
-                logging.warning(f"Skipping {prop} on row {state.get('$row')}: {warn}")
+                has_values = True
+            except MissingValueWarning:
+                pass
             except ValueError as ex:
-                if state.abort_on_error:
-                    raise ValueError(f"Failed to process property {prop} on row {state.get('$row')}: {ex}") from ex
-                else:
-                    logging.warning(f"Skipping {prop} on row {state.get('$row')} because {ex}")
+                logging.warning(f"Skipping template {template_ix} for property {prop} on row {state.get('$row')} because {ex}")
+        if not has_values and state.abort_on_error:
+            raise ValueError(f"No templates for property {prop} on row {state.get('$row')} produced any values")
         return
 
     # Check for inverse property
@@ -382,6 +383,11 @@ def process_property_value(resource: IdentifiedNode, prop: str, template: Any, s
         raise NotImplementedError("Implement inline property specs")
 
     if isinstance(value, list):
+        if len(value) == 0:
+            if prop_spec and prop_spec.required:
+                raise ValueError(f"No values produced for property {prop} with template {template}")
+            else:
+                raise MissingValueWarning(f"No values produced for property {prop} with template {template}")
         for v in value:
             state.add_to_graph((v, propref, resource) if inverse else (resource, propref, v))
     else:
@@ -393,7 +399,8 @@ def process_property_value(resource: IdentifiedNode, prop: str, template: Any, s
             state.add_to_graph(triple)
         elif prop_spec and  prop_spec.required:
             raise ValueError(f"Value missing for required property {prop_spec.name}, pattern: {template}")
-        # else do nothing, missing value but not required
+        else:
+            raise MissingValueWarning(f"Value missing for property {prop}, pattern: {template}")
 
 _AUTO_CLASS_SPEC = ResourceSpec(ResourceModel(
     name="AUTO_CLASS",

@@ -1,11 +1,10 @@
 import re
-from typing import Any, Callable, Iterable, Iterator, Mapping, Protocol
+from typing import Any, Callable, Iterable, Iterator, List, Mapping, Protocol
 
 from rdflib import Literal
 from rdflib.term import Identifier
 
 from rdf_mapper.lib import function
-from rdf_mapper.lib.errors import MissingValueWarning
 from rdf_mapper.lib.template_state import TemplateState
 
 _CURI_PATTERN = re.compile(r"([_A-Za-z][\w\-\.]*):([\w\-\.]+)")
@@ -18,10 +17,11 @@ def _expand_curi(uriref: str, namespaces: Mapping[str,str]) -> str:
             return ns + match.group(2)
     return uriref
 
+def _is_none_or_empty(value: Any) -> bool:
+    return value is None or (isinstance(value, str) and value == "")
 
-class PipelineFunction(Protocol):
-    def __call__(self, lit: Literal|None, *args: str) -> Literal:
-        ...
+def _is_iterable(value: Any) -> bool:
+    return isinstance(value, Iterable) and not isinstance(value, str)
 
 class Pattern:
 
@@ -40,11 +40,11 @@ class Pattern:
         self._call_chain: list[Callable[[Identifier|None, TemplateState], Iterator[Identifier]]] = []
         self._parsePattern()
 
-    def execute(self, state: TemplateState) -> Iterator[Identifier]:
+    def execute(self, state: TemplateState) -> List[Identifier]:
         values = list(self._call_chain[0](None, state))
         for func in self._call_chain[1:]:
             values = list(self._concat(v, result) for v in values for result in func(v, state))
-        yield from filter(lambda v: v is not None, map(lambda v: self._wrap_literal(v, state.spec.namespaces), values)) #type: ignore
+        return list(filter(lambda v: v is not None, map(lambda v: self._wrap_literal(v, state.spec.namespaces), values))) #type: ignore
 
     def _wrap_literal(self, node: Identifier|None, namespaces: Mapping[str, str]) -> Identifier|None:
         if node is None:
@@ -104,7 +104,7 @@ class VariableExpansion:
 
     def execute(self,_:Any, state: TemplateState) -> Iterator[Identifier]:
         values = self._call_chain[0](None, state)
-        if isinstance(values, Iterable) and not isinstance(values, str):
+        if _is_iterable(values):
             values = list(values)
         else:
             values = [values]
@@ -112,20 +112,18 @@ class VariableExpansion:
             results = []
             for v in values:
                 result = func(v, state)
-                if isinstance(result, Iterable) and not isinstance(result, str):
+                if _is_iterable(result):
                     results.extend(result)
                 else:
                     results.append(result)
             values = results
         yield from self._wrap_results(values)
 
-        # yield from map(lambda v: Literal(v) if not isinstance(v, Identifier) else v, filter(lambda v: v is not None, values))
-
     def _wrap_results(self, values: list[Any]) -> Iterator[Identifier]:
         for v in values:
-            if isinstance(v, Iterable) and not isinstance(v, str):
+            if _is_iterable(v):
                 yield from self._wrap_results(list(v))
-            elif v is not None:
+            elif not _is_none_or_empty(v):
                 yield Literal(v) if not isinstance(v, Identifier) else v
 
 def static_value(value: str) -> Callable[[Identifier|None, TemplateState], Iterator[Literal]]:
@@ -133,12 +131,9 @@ def static_value(value: str) -> Callable[[Identifier|None, TemplateState], Itera
         yield Literal(value)
     return _static_value
 
-
 def _variable_value(var_name: str) -> Callable[[Identifier|None, TemplateState], Iterator[Any]]:
     def _variable_value_(_: Identifier|None, state: TemplateState) -> Iterator[Any]:
-        if var_name in state.context:
+        if var_name in state.context and not _is_none_or_empty(state.context[var_name]):
             yield state.context[var_name]
-        else:
-            raise MissingValueWarning(f"Variable '{var_name}' not found in context")
     return _variable_value_
 
