@@ -6,6 +6,12 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 This project is currently in pre-release and a new minor version increment MAY NOT be backwards compatible with the previous minor version. Breaking changes are marked as BREAKING in the descriptions below.
 
+## Unreleased
+
+### Fixed
+
+- Fixed an issue where the handling of missing/empty string values in 0.3.x differed to the handling in 0.2.x. When a missing/empty string/None value is encountered while expanding a property template, no value will be emitted even if the template contains static strings or other variables that expand to non-empty values. (#68)
+
 ## [0.3.2] - 2026-04-30
 
 ### Fixed

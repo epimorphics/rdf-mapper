@@ -19,10 +19,27 @@ class TestPattern (unittest.TestCase):
 
     def test_datatype(self) -> None:
         pattern = Pattern("42^^<http://www.w3.org/2001/XMLSchema#integer>")
-        # self.assertEqual(pattern.type, "datatype")
-        # self.assertEqual(pattern.lang, None)
-        # self.assertEqual(pattern.datatype, "<http://www.w3.org/2001/XMLSchema#integer>")
         self.assertEqual(list(pattern.execute(TemplateState(ChainMap(), Dataset(), MapperSpec()))), [Literal("42", datatype="http://www.w3.org/2001/XMLSchema#integer")])
+
+    def test_simple_variable(self) -> None:
+        pattern = Pattern("{name}")
+        self.assertEqual(len(pattern._call_chain), 1)  # variable "name"
+        self.assertTrue(callable(pattern._call_chain[0]))  # variable "name"
+        state = TemplateState(
+            ChainMap({"name": "Alice"}), Dataset(), MapperSpec())
+        self.assertEqual(list(pattern.execute(state)), [Literal("Alice")])
+        state = TemplateState(
+            ChainMap({"name": ["Alice", "Bob", "Charlie"]}), Dataset(), MapperSpec())
+        self.assertEqual(list(pattern.execute(state)), [Literal("Alice"), Literal("Bob"), Literal("Charlie")])
+        state = TemplateState(
+            ChainMap({}), Dataset(), MapperSpec())
+        self.assertEqual(list(pattern.execute(state)), [])  # Missing variable should not be yielded as literals
+        state = TemplateState(
+            ChainMap({"name": None}), Dataset(), MapperSpec())
+        self.assertEqual(list(pattern.execute(state)), [])  # None values should not be yielded as literals
+        state = TemplateState(
+            ChainMap({"name": ""}), Dataset(), MapperSpec())
+        self.assertEqual(list(pattern.execute(state)), [])  # Empty string values should not be yielded as literals
 
     def test_variables_and_statics(self) -> None:
         pattern = Pattern("Hello {name}!")
@@ -33,18 +50,22 @@ class TestPattern (unittest.TestCase):
         state = TemplateState(
             ChainMap({"name": "Alice"}), Dataset(), MapperSpec())
         self.assertEqual(list(pattern.execute(state)), [Literal("Hello Alice!")])
-
-    def test_variable_with_list_value(self) -> None:
-        pattern = Pattern("{names}")
         state = TemplateState(
-            ChainMap({"names": ["Alice", "Bob", "Charlie"]}), Dataset(), MapperSpec())
-        self.assertEqual(list(pattern.execute(state)), [Literal("Alice"), Literal("Bob"), Literal("Charlie")])
-
-    def test_variable_with_static_and_list_value(self) -> None:
-        pattern = Pattern("Name: {names}")
+            ChainMap({}), Dataset(), MapperSpec())
+        self.assertEqual(list(pattern.execute(state)), [])  # Missing variable should not be yielded as literals
         state = TemplateState(
-            ChainMap({"names": ["Alice", "Bob", "Charlie"]}), Dataset(), MapperSpec())
-        self.assertEqual(list(pattern.execute(state)), [Literal("Name: Alice"), Literal("Name: Bob"), Literal("Name: Charlie")])
+            ChainMap({"name": None}), Dataset(), MapperSpec())
+        self.assertEqual(list(pattern.execute(state)), [])  # None values should not be yielded as literals
+        state = TemplateState(
+            ChainMap({"name": ""}), Dataset(), MapperSpec())
+        self.assertEqual(list(pattern.execute(state)), [])  # Empty string values should not be yielded as literals
+        state = TemplateState(
+            ChainMap({"name": ["Alice", "Bob", "Charlie"]}), Dataset(), MapperSpec())
+        self.assertEqual(list(pattern.execute(state)),
+                         [Literal("Hello Alice!"), Literal("Hello Bob!"), Literal("Hello Charlie!")])
+        state = TemplateState(
+            ChainMap({"name": ["Alice", "", "Charlie"]}), Dataset(), MapperSpec())
+        self.assertEqual(list(pattern.execute(state)), [Literal("Hello Alice!"), Literal("Hello Charlie!")])
 
     def test_datatype_as_variable(self) -> None:
         pattern = Pattern("{@value}^^<{@type}>")
