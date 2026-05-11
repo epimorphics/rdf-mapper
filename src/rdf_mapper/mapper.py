@@ -57,10 +57,11 @@ def main() -> None:
     spec = load_template(args.template[0])
 
     if args.set_global:
-        print (f"Setting global variables: {args.set_global}")
+        d = {}
         for item in args.set_global:
             key, value = item.split("=", 1)
-            spec.globals[key] = value
+            d[key] = value
+        spec.add_context(d)
 
     spec.auto_declare = args.auto_declare
     datafile = args.datafile[0]
