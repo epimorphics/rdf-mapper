@@ -7,7 +7,7 @@ Maps are expressed in (largely) declarative yaml and the mapper tool will proces
 Operation:
 
 ```sh
-    mapper [--auto-declare] [--format=turtle] [--abort-on-error] template input [output]
+    mapper [--auto-declare] [--format=turtle] [--abort-on-error] [-g/--set-global KEY=VALUE] template input [output]
 ```
 
 Formats supported are `turtle` (default), `trig`, `nquads`, `update` and `delete`. 
@@ -26,6 +26,9 @@ If no output file is specified the transformed data will be written to stdout.
 With the `--abort-on-error` flag set, any errors that occur will prevent output being generated but the mapper will still process the whole input (so as to find all errors) then exit with an error status.
 
 Errors and warnings will be logged to stderr and to `mapper.log`.
+
+The `-g` or `--set-global` option can be used to define the value for a global variable. Values defined in this way will override any existing value in the processed template.
+Multiple variables can be defined by repeating the `-g`/`--set-global` option for each variable.
 
 Key features:
 
@@ -108,7 +111,7 @@ resources:
 
 The short name for the dataset is set by binding `$datasetID` in the first stanza. Variables use a convention of a `$` prefix for builtin or global configuration values.
 
-If run with `--auto-declare` then each row of the source data will generate a resource of type `def:HSERegistration` with two properties, derived from the columns `Product Name` and `MAPP (Reg.) Number` in the source data.  The output will also include a minimal class definition for `def:HSERegistration` and for the two properties. The resources themselves will be generated in a `data:` namespace. The `def:` and `data:` namespaces default to be relative to a dataset namespace which in turn uses the `$datasetID` combined with a default global base namespace. 
+If run with `--auto-declare` then each row of the source data will generate a resource of type `def:HSERegistration` with two properties, derived from the columns `Product Name` and `MAPP (Reg.) Number` in the source data.  The output will also include a minimal class definition for `def:HSERegistration` and for the two properties. The resources themselves will be generated in a `data:` namespace. The `def:` and `data:` namespaces default to be relative to a dataset namespace which in turn uses the `$datasetID` combined with a default global base namespace.
 
 ## Map file Structure
 
