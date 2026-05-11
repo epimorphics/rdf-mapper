@@ -8,6 +8,10 @@ This project is currently in pre-release and a new minor version increment MAY N
 
 ## Unreleased
 
+### New
+
+- Added support for defining global variable values on the command-line with the `-g`/`--set-global` option.
+
 ### Fixed
 
 - Fixed an issue where the handling of missing/empty string values in 0.3.x differed to the handling in 0.2.x. When a missing/empty string/None value is encountered while expanding a property template, no value will be emitted even if the template contains static strings or other variables that expand to non-empty values. (#68)

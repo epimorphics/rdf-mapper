@@ -48,10 +48,20 @@ argparser.add_argument('--format', choices=['turtle', 'nquads', 'trig', 'update'
                         help='Output format: nquads, trig, update, or delete')
 argparser.add_argument('--abort-on-error', action='store_true',
                        help='Abort processing if an error was encountered, but process all rows to collect errors first')
+argparser.add_argument('-g', '--set-global', action='append', type=str,
+                       metavar="KEY=VALUE",
+                       help='Set a global variable for use in the template.')
 
 def main() -> None:
     args = argparser.parse_args()
     spec = load_template(args.template[0])
+
+    if args.set_global:
+        print (f"Setting global variables: {args.set_global}")
+        for item in args.set_global:
+            key, value = item.split("=", 1)
+            spec.globals[key] = value
+
     spec.auto_declare = args.auto_declare
     datafile = args.datafile[0]
 
