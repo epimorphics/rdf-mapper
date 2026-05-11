@@ -165,6 +165,10 @@ class MapperSpec:
             )
         )
 
+    def add_context(self, d: dict[str, Any]) -> None:
+        """Add supplied values to the context."""
+        self.context = self.context.new_child(d)
+
 
 def _error(message: str) -> NoReturn:
     print(f"Badly formatted mapping spec: {message}", file=sys.stderr)

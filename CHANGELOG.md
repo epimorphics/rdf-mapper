@@ -6,6 +6,13 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 This project is currently in pre-release and a new minor version increment MAY NOT be backwards compatible with the previous minor version. Breaking changes are marked as BREAKING in the descriptions below.
 
+## [0.3.4] - 2026-05-11
+
+## Fixed
+
+- Remove unnecessary stdout logging (#77)
+- Fix problem with globals not being overridden on command line
+
 ## [0.3.3] - 2026-05-11
 
 ### New
