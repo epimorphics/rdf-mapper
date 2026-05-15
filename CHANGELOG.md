@@ -6,6 +6,12 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 This project is currently in pre-release and a new minor version increment MAY NOT be backwards compatible with the previous minor version. Breaking changes are marked as BREAKING in the descriptions below.
 
+## Unreleased
+
+## Changed
+
+- Changed the handling of property value templates that generate a URI (i.e. ones that use `<` and `>` around them). In the case that the pattern between the angle brackets resulted in no values, the processor would add an automatically generated value. From this version, this behaviour is removed and if the pattern returns no values, no URIs will be generated.
+
 ## [0.3.4] - 2026-05-11
 
 ## Fixed

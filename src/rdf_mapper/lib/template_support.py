@@ -160,9 +160,6 @@ def uri_expand(pattern: str, namespaces: Mapping[str,str], state: TemplateState)
             for uri_value in uri_values:
                 urirefs.append(_expand_curi(str(uri_value), namespaces))
 
-        if len(urirefs) == 0:
-            urirefs.append(f"{state.get('$datasetBase')}/data/{state.get('$resourceID')}")
-
         return list(map(lambda uriref: _make_full_iri(uriref, state), urirefs))
     else:
         # Simple string, create as def in dataset namespace
