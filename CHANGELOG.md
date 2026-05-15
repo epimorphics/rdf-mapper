@@ -8,7 +8,7 @@ This project is currently in pre-release and a new minor version increment MAY N
 
 ## Unreleased
 
-## Changed
+## [0.3.5] - 2026-05-15
 
 - Changed the handling of property value templates that generate a URI (i.e. ones that use `<` and `>` around them). In the case that the pattern between the angle brackets resulted in no values, the processor would add an automatically generated value. From this version, this behaviour is removed and if the pattern returns no values, no URIs will be generated.
 
