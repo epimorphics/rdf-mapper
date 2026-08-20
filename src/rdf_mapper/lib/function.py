@@ -80,9 +80,9 @@ def asDecimal(s: Any, state: TemplateState | None = None) -> Literal | None:
 def _parse_datetime(s: str) -> datetime.datetime | None:
     """
     Parse a string into a datetime object.
-    dateparser defaults to en MDY order can override to DMY but then big endian dates fail.
-    So detect big endian dates and use that format, otherwise use DMY.
-    May also have to add specific formats using date_formats arg. To be decided.
+    dateparser when lang=en defaults to MDY order, we can override to DMY but then big endian dates fail.
+    So detect big endian dates and use YMD format, otherwise use DMY.
+    May also have to add specific formats using date_formats arg if we find exceptions but this seems to work.
     """
     if _noneOrEmpty(s) or type(s) is not str:
         return None
