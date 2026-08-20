@@ -129,12 +129,16 @@ class TestTemplateSupport(unittest.TestCase):
     def test_dates(self) -> None:
         self.assertEqual(asDate("2023-05-18"), Literal("2023-05-18", datatype=XSD.date))
         self.assertEqual(asDate("18 May 2023"), Literal("2023-05-18", datatype=XSD.date))
+        self.assertEqual(asDate("01 02 2023"), Literal("2023-02-01", datatype=XSD.date))
+        self.assertEqual(asDate("1/2/2023"), Literal("2023-02-01", datatype=XSD.date))
         self.assertEqual(asDate("2023-05-18 12:34"), Literal("2023-05-18", datatype=XSD.date))
         self.assertEqual(asDateTime("2023-05-18 12:34"), Literal("2023-05-18T12:34:00", datatype=XSD.dateTime))
         self.assertEqual(asDateTime("18 May 2023 12:34"), Literal("2023-05-18T12:34:00", datatype=XSD.dateTime))
+        self.assertEqual(asDateTime("08-05-2026 00:00:00"), Literal("2026-05-08T00:00:00", datatype=XSD.dateTime))
         self.assertEqual(asDateOrDatetime("18 May 2023 12:34"), Literal("2023-05-18T12:34:00", datatype=XSD.dateTime))
         self.assertEqual(asDateOrDatetime("18 May 2023"), Literal("2023-05-18", datatype=XSD.date))
         self.assertEqual(asDateOrDatetime("2023"), Literal("2023-01-01", datatype=XSD.date))
+        self.assertEqual(asDateOrDatetime("08-05-2026 10:00:00"), Literal("2026-05-08T10:00:00", datatype=XSD.dateTime))
         self.assertIsNone(asDateOrDatetime(None)) # type: ignore
         self.assertIsNone(asDateOrDatetime(""))
 

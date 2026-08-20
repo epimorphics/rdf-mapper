@@ -77,17 +77,30 @@ def asDecimal(s: Any, state: TemplateState | None = None) -> Literal | None:
     else:
         return Literal(float(s), datatype=XSD.decimal)
 
+def _parse_datetime(s: str) -> datetime.datetime | None:
+    """
+    Parse a string into a datetime object.
+    dateparser defaults to en MDY order can override to DMY but then big endian dates fail.
+    So detect big endian dates and use that format, otherwise use DMY.
+    May also have to add specific formats using date_formats arg. To be decided.
+    """
+    if _noneOrEmpty(s) or type(s) is not str:
+        return None
+    if re.match(r"[12]\d{3}", s):
+        return dateparser.parse(s, settings={'DATE_ORDER': 'YMD', 'PREFER_LOCALE_DATE_ORDER': False})
+    else:
+        return dateparser.parse(s, settings={'DATE_ORDER': 'DMY', 'PREFER_LOCALE_DATE_ORDER': False})
 
 def asDateTime(s: Any, state: TemplateState | None = None) -> Literal | None:
     if _noneOrEmpty(s) or type(s) is not str:
         return None
-    dt = dateparser.parse(s)
+    dt = _parse_datetime(s)
     return Literal(dt.isoformat(), datatype=XSD.dateTime) if dt else None
 
 def asDate(s: str, state: TemplateState | None = None) -> Literal | None:
     if _noneOrEmpty(s) or type(s) is not str:
         return None
-    dt = dateparser.parse(s)
+    dt = _parse_datetime(s)
     return Literal(dt.date().isoformat(), datatype=XSD.date) if dt else None
 
 def asDateOrDatetime(s: str, state: TemplateState | None = None) -> Literal | None:
@@ -96,7 +109,7 @@ def asDateOrDatetime(s: str, state: TemplateState | None = None) -> Literal | No
     if re.fullmatch(r"[12]\d{3}", s):
         return Literal(f'{s}-01-01', datatype=XSD.date)
     else:
-        dt = dateparser.parse(s)
+        dt = _parse_datetime(s)
         if dt:
             if dt.time() == datetime.time(0,0):
                 return Literal(dt.date().isoformat(), datatype=XSD.date)
